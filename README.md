@@ -2,6 +2,8 @@
 
 Kaya browser extensions
 
+## Release
+
 ## Open Questions
 
 * Ladybird and Servo Browser support in the future?
