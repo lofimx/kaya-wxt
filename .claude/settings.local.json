@@ -5,7 +5,9 @@
       "WebFetch(domain:wxt.dev)",
       "mcp__acp__Write",
       "mcp__acp__Edit",
-      "WebFetch(domain:docs.rs)"
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:crates.io)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

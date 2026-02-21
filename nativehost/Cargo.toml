@@ -1,0 +1,42 @@
+[package]
+name = "savebutton-nativehost"
+version = "1.0.0"
+edition = "2021"
+authors = ["lofi.mx"]
+description = "Native messaging host for the Save Button browser extension"
+license = "MIT"
+
+[lib]
+name = "savebutton_nativehost"
+path = "src/lib.rs"
+
+[[bin]]
+name = "savebutton-nativehost"
+path = "src/main.rs"
+
+[dependencies]
+# native_messaging v0.2 doesn't feature-gate its tokio code, so we must use
+# default features (tokio + install). We only call the sync framing API.
+native_messaging = { version = "0.2", features = ["install"] }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+base64 = "0.22"
+toml = "0.8"
+dirs = "5.0"
+reqwest = { version = "0.12", features = ["blocking", "multipart"] }
+ring = "0.17"
+rand = "0.8"
+chrono = "0.4"
+thiserror = "1.0"
+urlencoding = "2.1"
+log = "0.4"
+fern = "0.7"
+
+[target.'cfg(windows)'.dependencies]
+native_messaging = { version = "0.2", features = ["install", "windows-registry"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true

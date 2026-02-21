@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 # Release Script
-# Bumps the patch version in extension/manifest.json, commits, tags, and pushes.
+# Bumps the patch version in extension/package.json, commits, tags, and pushes.
 #
 # Usage:
 #   ruby bin/release.rb
@@ -10,12 +10,12 @@
 # The script:
 #   1. Finds the highest semver tag (e.g. v0.2.13)
 #   2. Bumps the patch number (e.g. 0.2.14)
-#   3. Updates "version" in extension/manifest.json
+#   3. Updates "version" in extension/package.json
 #   4. Commits the change
 #   5. Tags it (e.g. v0.2.14)
 #   6. Pushes the tag to origin
 
-MANIFEST_PATH = File.expand_path("../extension/manifest.json", __dir__)
+PACKAGE_JSON_PATH = File.expand_path("../extension/package.json", __dir__)
 
 def run(cmd)
   output = `#{cmd} 2>&1`.strip
@@ -52,15 +52,15 @@ def tag_string(v)
   "v#{version_string(v)}"
 end
 
-def update_manifest(new_version)
-  content = File.read(MANIFEST_PATH)
+def update_package_json(new_version)
+  content = File.read(PACKAGE_JSON_PATH)
 
   old_version = content.match(/"version":\s*"([^"]+)"/)[1]
   updated = content.sub(/"version":\s*"[^"]+"/, "\"version\": \"#{new_version}\"")
 
-  abort "manifest.json was not changed — version regex may be wrong" if updated == content
+  abort "package.json was not changed — version regex may be wrong" if updated == content
 
-  File.write(MANIFEST_PATH, updated)
+  File.write(PACKAGE_JSON_PATH, updated)
 
   old_version
 end
@@ -82,24 +82,24 @@ answer = $stdin.gets.chomp
 abort "Aborted." unless answer.downcase == "y"
 puts
 
-# Check for uncommitted changes (besides manifest.json itself)
+# Check for uncommitted changes (besides package.json itself)
 status = `git status --porcelain`.strip
-dirty_files = status.split("\n").reject { |line| line.end_with?("extension/manifest.json") }
+dirty_files = status.split("\n").reject { |line| line.end_with?("extension/package.json") }
 unless dirty_files.empty?
   abort "Working tree has uncommitted changes:\n#{dirty_files.join("\n")}\nPlease commit or stash them first."
 end
 
-old_version = update_manifest(new_version)
-puts "Updated extension/manifest.json: #{old_version} -> #{new_version}"
+old_version = update_package_json(new_version)
+puts "Updated extension/package.json: #{old_version} -> #{new_version}"
 
-run("git add extension/manifest.json")
+run("git add extension/package.json")
 run("git commit -m 'v#{new_version}'")
 puts "Committed."
 
 run("git tag #{new_tag}")
 puts "Tagged #{new_tag}."
 
-run("git push origin master")
+run("git push origin main")
 run("git push origin #{new_tag}")
 puts "Pushed #{new_tag} to origin."
 

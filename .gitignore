@@ -1,0 +1,5 @@
+nativehost/target
+extension/node_modules
+extension/.output
+extension/.wxt
+web-ext-artifacts/

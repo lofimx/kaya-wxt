@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="manifest.default_icon" content='{ "16": "/icon/icon-grey-16.png", "32": "/icon/icon-grey-32.png", "48": "/icon/icon-grey-48.png", "96": "/icon/icon-grey-96.png" }' />
+    <meta name="manifest.default_title" content="Add to Save Button" />
+    <link rel="stylesheet" href="./popup/style.css" />
+  </head>
+  <body>
+    <div id="popup">
+      <!-- Setup view (shown on first use) -->
+      <div id="setup-view" class="hidden">
+        <h2>Welcome to Save Button</h2>
+        <p class="setup-intro">
+          Enter your Save Button server details to get started.
+        </p>
+
+        <div class="form-group">
+          <label for="setup-server">Save Button Server</label>
+          <input
+            type="url"
+            id="setup-server"
+            placeholder="https://savebutton.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="setup-email">Email</label>
+          <input
+            type="email"
+            id="setup-email"
+            placeholder="you@example.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="setup-password">Password</label>
+          <input
+            type="password"
+            id="setup-password"
+            placeholder="Your password"
+          />
+        </div>
+
+        <button id="setup-save-btn" class="primary">
+          Save & Continue
+        </button>
+
+        <div id="setup-error" class="hidden"></div>
+      </div>
+
+      <!-- Bookmark view (shown after setup) -->
+      <div id="bookmark-view" class="hidden">
+        <div id="status">
+          <span id="status-icon"></span>
+          <span id="status-text">Saving bookmark...</span>
+        </div>
+        <div id="note-container">
+          <label for="note-input">Add a Note</label>
+          <input
+            type="text"
+            id="note-input"
+            placeholder="Optional note..."
+          />
+        </div>
+        <div id="error-container" class="hidden">
+          <span id="error-text"></span>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./popup/main.ts"></script>
+  </body>
+</html>

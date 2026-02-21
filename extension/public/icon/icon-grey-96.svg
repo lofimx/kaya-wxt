@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 512 512">
+  <defs>
+    <filter id="greyscale">
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+  </defs>
+  <image href="icon-96.svg" width="512" height="512" filter="url(#greyscale)"/>
+</svg>

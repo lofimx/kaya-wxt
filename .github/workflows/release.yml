@@ -1,0 +1,176 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-extension:
+    name: Build Extension (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [firefox, chrome, edge]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: extension/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: extension
+        run: pnpm install
+
+      - name: Build extension
+        working-directory: extension
+        run: pnpm wxt build -b ${{ matrix.browser }}
+
+      - name: Zip extension
+        working-directory: extension
+        run: pnpm wxt zip -b ${{ matrix.browser }}
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-${{ matrix.browser }}
+          path: extension/.output/*.zip
+
+  build-nativehost:
+    name: Build Native Host (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: savebutton-nativehost
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary: savebutton-nativehost
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary: savebutton-nativehost
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: savebutton-nativehost.exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build
+        working-directory: nativehost
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nativehost-${{ matrix.target }}
+          path: nativehost/target/${{ matrix.target }}/release/${{ matrix.binary }}
+
+  package-linux:
+    name: Package Linux (${{ matrix.format }})
+    needs: build-nativehost
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        format: [deb, rpm]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: nativehost-x86_64-unknown-linux-gnu
+          path: binary
+
+      - name: Make binary executable
+        run: chmod +x binary/savebutton-nativehost
+
+      - name: Install rpmbuild
+        if: matrix.format == 'rpm'
+        run: sudo apt-get install -y rpm
+
+      - name: Build package
+        run: nativehost/packaging/build-${{ matrix.format }}.sh binary/savebutton-nativehost
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.format }}
+          path: |
+            nativehost/packaging/build-deb/*.deb
+            nativehost/packaging/build-rpm/rpmbuild/RPMS/**/*.rpm
+
+  release:
+    name: Create Release
+    needs: [build-extension, build-nativehost, package-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/**/*.zip
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/nativehost-*/*
+
+  test-rust:
+    name: Test Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run tests
+        working-directory: nativehost
+        run: cargo test
+
+  test-extension:
+    name: Test Extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: extension/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: extension
+        run: pnpm install
+
+      - name: Build (Firefox)
+        working-directory: extension
+        run: pnpm wxt build -b firefox
+
+      - name: Build (Chrome)
+        working-directory: extension
+        run: pnpm wxt build -b chrome

@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="manifest.open_in_tab" content="false" />
+    <title>Save Button Preferences</title>
+    <link rel="stylesheet" href="./options/style.css" />
+  </head>
+  <body>
+    <div id="options">
+      <h1>Save Button Preferences</h1>
+
+      <div class="form-group">
+        <label for="server">Save Button Server</label>
+        <input
+          type="url"
+          id="server"
+          placeholder="https://savebutton.com"
+        />
+        <p class="help-text">The URL of your Save Button server</p>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Your password"
+        />
+      </div>
+
+      <div class="button-group">
+        <button id="save-btn" class="primary">Save</button>
+        <button id="test-btn">Test Connection</button>
+      </div>
+
+      <div id="status" class="hidden"></div>
+    </div>
+    <script type="module" src="./options/main.ts"></script>
+  </body>
+</html>
