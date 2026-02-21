@@ -32,6 +32,10 @@ Because `kaya-firefox` uses a native host to provide direct access to disk, and 
 
 The native host Rust crate can receive a `--install` flag and then use the `install()` function from the `native_messaging` crate to assist with placing JSON files in specific browser folders.
 
+### Immediate Sync
+
+When a bookmark is saved, a server sync should occur immediately after the bookmark is saved to disk, to ensure the synchronization happens before MV3 (Chrome, Edge) potentially suspends the Rust process due to inactivity (~30 seconds).
+
 ### Automation: CI/CD
 
 The `kaya-firefox` repo currently has a `.github/workflows/sign-extension.yml` GitHub Actions workflow that does some of the above work. All packages for all 6 distribution targets (Windows, MacOS, RPM, DEB, AUR, `./install.sh`) should be built automatically by GitHub Actions. Any signing, notarizing, etc. should also happen in the GitHub Actions workflow(s).

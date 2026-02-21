@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__acp__Bash",
+      "WebFetch(domain:wxt.dev)",
+      "mcp__acp__Write",
+      "mcp__acp__Edit",
+      "WebFetch(domain:docs.rs)"
+    ]
+  }
+}
