@@ -72,3 +72,25 @@ I also noticed that an image (the gravatar image on deobald.ca) stores the image
 ## Safari Support
 
 I think all the store submissions are completed except for Safari. Since you said the process for Safari was special, please plan out the implementation based on [@PLAN.md](file:///home/steven/work/lofi/kaya-wxt/doc/plan/PLAN.md) for building Safari support and releasing it. I have an Apple Developer Account for Kaya / Save Button.
+
+### Implement Safari Support
+
+Reviewed plan at `doc/plan/2026-02-22-03-add-safari-support.md` and implemented:
+- Built WXT for Safari (`pnpm wxt build -b safari`) producing MV2 output
+- Generated Xcode project via `safari-web-extension-converter` with bundle ID `org.savebutton.app`
+- Set deployment targets: macOS 12.0, iOS 16.0 (for OPFS support)
+- Set marketing version to 0.2.0
+- Verified macOS build succeeds via `xcodebuild`
+- Created `bin/build-safari.sh` automation script
+- Added `build:safari` and `zip:safari` scripts to package.json
+- Stubbed `build-safari` CI job in release.yml with TODO for Apple signing secrets
+- Updated AGENTS.md, README.md, listing.md, STORES.md
+
+### Replace notifications with green icon flash
+
+Safari doesn't support `browser.notifications.create()`. Replaced `showNotification()` with
+`flashGreenIcon()` which temporarily swaps the toolbar icon to a green variant for 2 seconds.
+- Generated green icon PNGs (`icon-green-{16,32,48,96}.png`) via ImageMagick color replacement
+- Updated `bin/generate-icons.sh` to produce green variants
+- Removed `notifications` permission from `wxt.config.ts`
+- Added "Safari: Manual Tasks" section to README.md

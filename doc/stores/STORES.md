@@ -9,6 +9,7 @@ Save Button is published to three browser extension stores. This document covers
 | Chrome Web Store | [Developer Dashboard](https://chrome.google.com/webstore/devconsole) | [mnao305/chrome-extension-upload@v5](https://github.com/mnao305/chrome-extension-upload) |
 | Edge Add-ons | [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/) | [wdzeng/edge-addon@v2](https://github.com/wdzeng/edge-addon) |
 | Firefox AMO | [AMO Developer Hub](https://addons.mozilla.org/en-US/developers/) | `wxt submit` / `web-ext sign` |
+| Safari / App Store | [App Store Connect](https://appstoreconnect.apple.com/) | Xcode Archive (manual) |
 
 ## How Releases Work
 
@@ -141,6 +142,37 @@ Both Chrome and Edge require a manual first submission. Firefox has already been
 5. Submit for review
 6. Note the **product ID** and add it as the `EDGE_PRODUCT_ID` secret
 7. Generate API credentials (Partner Center > Publish API) and add as secrets
+
+---
+
+### Safari / App Store -- First Submission
+
+Safari extensions are packaged as macOS/iOS apps via Xcode. The Xcode project lives in `safari/Save Button/`.
+
+1. Build the WXT output: `bin/build-safari.sh`
+2. Open in Xcode: `open "safari/Save Button/Save Button.xcodeproj"`
+3. Configure signing: Select your Apple Developer team for all 4 targets, enable automatic signing
+4. Register App IDs in App Store Connect:
+   - `org.savebutton.app` (container app)
+   - `org.savebutton.app.Extension` (web extension target)
+5. Add App Group capability: `group.org.savebutton` to both container and extension targets
+6. Product > Archive (select "Any Mac" or specific iOS device/simulator)
+7. In the Organizer: Distribute App > App Store Connect
+8. In [App Store Connect](https://appstoreconnect.apple.com/):
+   - Create a new app listing for "Save Button" under Productivity
+   - Set platforms to macOS + iOS
+   - Fill in description from `doc/stores/listing.md`
+   - Upload screenshots from Safari (macOS) and iOS Safari
+   - Set pricing to Free
+   - Submit for review
+
+**Bundle identifiers:**
+- Container app: `org.savebutton.app`
+- Extension: `org.savebutton.app.Extension`
+
+**Deployment targets:**
+- macOS 12.0 (Safari 15.2+ for OPFS support)
+- iOS 16.0 (Safari 16+ for OPFS support)
 
 ---
 

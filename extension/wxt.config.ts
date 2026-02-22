@@ -18,7 +18,6 @@ export default defineConfig({
       "tabs",
       "contextMenus",
       "storage",
-      "notifications",
       "alarms",
     ],
     host_permissions: ["<all_urls>"],

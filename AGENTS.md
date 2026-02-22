@@ -14,7 +14,7 @@ Both are named "Save Button" to the user.
 
 ## Planning
 
-Read [@PLAN.md](./doc/plan/PLAN.md) and follow those instructions for creating a plan before any work is performed.
+Read [@PLAN.md](./doc/plan/PLAN.md) and follow those instructions for creating a plan before any work is performed. **Plans must always be written to `doc/plan/`** -- never to `~/.claude/plans/` or any other tool-internal location.
 
 ---
 
@@ -41,9 +41,9 @@ The extension follows the Architectural Decision Records listed in [@arch](./doc
 
 The extension is built with WXT to support multiple browsers from a single codebase:
 
-* **Primary targets**: Firefox, Chrome, Edge
+* **Primary targets**: Firefox, Chrome, Edge, Safari
 * **Also supported**: Chromium-based browsers (Brave, Opera, Vivaldi, Arc, etc.)
-* **Deferred**: Safari (requires separate Xcode packaging), Orion
+* **Deferred**: Orion
 * **Not supported**: Epiphany (no WebExtensions support)
 
 WXT defaults to MV2 for Firefox/Safari and MV3 for Chrome/Edge/others. Browser-specific code should use `import.meta.env.BROWSER` or `import.meta.env.MANIFEST_VERSION` for conditional logic.
@@ -136,6 +136,7 @@ The extension should be published to each browser's extension store:
 * **Firefox**: [addons.mozilla.org](https://addons.mozilla.org) via `web-ext sign`
 * **Chrome**: [Chrome Web Store](https://chromewebstore.google.com/) via the Chrome Web Store API
 * **Edge**: [Edge Add-ons](https://microsoftedge.microsoft.com/addons/) via the Edge Add-ons API
+* **Safari**: [Mac App Store](https://apps.apple.com/) via Xcode Archive + App Store Connect
 
 
 ## Optional Daemon

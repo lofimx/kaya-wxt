@@ -222,6 +222,51 @@ jobs:
             artifacts/**/*.rpm
             artifacts/daemon-*/*
 
+  # TODO: Automate Safari App Store submission. Requires:
+  #   - APPLE_TEAM_ID secret (Apple Developer Team ID)
+  #   - APPLE_CODE_SIGN_IDENTITY secret (e.g. "Apple Distribution: ...")
+  #   - App Store Connect API key for upload via xcrun altool or notarytool
+  #   - Uncomment and complete the xcodebuild archive and upload steps below
+  build-safari:
+    name: Build Safari Extension
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: extension/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: extension
+        run: pnpm install
+
+      - name: Build WXT for Safari
+        working-directory: extension
+        run: pnpm wxt build -b safari
+
+      # - name: Archive for macOS
+      #   run: |
+      #     cd "safari/Save Button"
+      #     xcodebuild archive \
+      #       -scheme "Save Button (macOS)" \
+      #       -archivePath build/SaveButton-macOS.xcarchive \
+      #       CODE_SIGN_IDENTITY="${{ secrets.APPLE_CODE_SIGN_IDENTITY }}" \
+      #       DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}"
+
+      # - name: Upload to App Store Connect
+      #   run: |
+      #     xcrun altool --upload-app \
+      #       -f "safari/Save Button/build/SaveButton-macOS.xcarchive" \
+      #       --apiKey "${{ secrets.APP_STORE_API_KEY }}" \
+      #       --apiIssuer "${{ secrets.APP_STORE_API_ISSUER }}"
+
   test-rust:
     name: Test Rust
     runs-on: ubuntu-latest

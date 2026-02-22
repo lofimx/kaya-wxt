@@ -139,18 +139,34 @@ async function saveImage(imageUrl: string, timestamp: string) {
   }
 
   await saveAnga(filename, arrayBuffer);
-  showNotification("Image added to Save Button");
+  flashGreenIcon();
 }
 
-function showNotification(message: string) {
-  browser.notifications
-    .create({
-      type: "basic",
-      iconUrl: "/icon/icon-96.png",
-      title: "Save Button",
-      message: message,
-    })
-    .catch(console.error);
+async function flashGreenIcon() {
+  try {
+    const action = browser.action ?? (browser as any).browserAction;
+    if (!action) return;
+
+    const tabs = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    const tabId = tabs.length > 0 ? tabs[0].id : undefined;
+
+    await action.setIcon({
+      path: {
+        16: "/icon/icon-green-16.png",
+        32: "/icon/icon-green-32.png",
+        48: "/icon/icon-green-48.png",
+        96: "/icon/icon-green-96.png",
+      },
+      tabId,
+    });
+
+    setTimeout(() => updateIconForActiveTab(), 2000);
+  } catch (error) {
+    console.error("Failed to flash green icon:", error);
+  }
 }
 
 export default defineBackground(() => {
@@ -193,13 +209,12 @@ export default defineBackground(() => {
       if (info.menuItemId === "save-to-kaya-text" && info.selectionText) {
         const filename = `${timestamp}-quote.md`;
         await saveAnga(filename, info.selectionText);
-        showNotification("Text added to Save Button");
+        flashGreenIcon();
       } else if (info.menuItemId === "save-to-kaya-image" && info.srcUrl) {
         await saveImage(info.srcUrl, timestamp);
       }
     } catch (error: any) {
       console.error("Failed to save:", error);
-      showNotification("Error: " + error.message);
     }
   });
 

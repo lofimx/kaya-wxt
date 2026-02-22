@@ -21,7 +21,7 @@ Features:
 - Save text quotes and images from context menus
 - Add notes to any bookmark
 - Automatic sync with your Save Button server
-- Works with Firefox, Chrome, Edge, and other Chromium-based browsers
+- Works with Firefox, Chrome, Edge, Safari, and other Chromium-based browsers
 - All data stored as plain files (bookmarks as .url, quotes as .md, metadata as .toml)
 - No third-party analytics or tracking
 

@@ -19,7 +19,21 @@
       "WebFetch(domain:cloudfour.com)",
       "WebFetch(domain:gist.github.com)",
       "WebFetch(domain:evilmartians.com)",
-      "WebFetch(domain:victorwynne.com)"
+      "WebFetch(domain:victorwynne.com)",
+      "Bash(xcrun --find:*)",
+      "Bash(pnpm wxt build:*)",
+      "Bash(pnpm install:*)",
+      "Bash(xcrun safari-web-extension-converter:*)",
+      "Bash(xcodebuild -list:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(chmod:*)",
+      "Bash(convert:*)",
+      "Bash(for size in 16 32 48 96)",
+      "Bash(do)",
+      "Bash(magick:*)",
+      "Bash(done)",
+      "Bash(ls:*)",
+      "Bash(pnpm test:*)"
     ]
   }
 }

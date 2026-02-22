@@ -31,6 +31,12 @@ for size in "${SIZES[@]}"; do
   convert "$OUTPUT_DIR/icon-${size}.png" -colorspace Gray "$OUTPUT_DIR/icon-grey-${size}.png"
 done
 
+# Generate green (success flash) PNGs from the colored ones
+for size in "${SIZES[@]}"; do
+  echo "  icon-green-${size}.png"
+  magick "$OUTPUT_DIR/icon-${size}.png" -modulate 100,100,85 -fill '#4caf50' -colorize 60 "$OUTPUT_DIR/icon-green-${size}.png"
+done
+
 # Copy colored SVG variants for Firefox
 for size in 48 96; do
   echo "  icon-${size}.svg"
