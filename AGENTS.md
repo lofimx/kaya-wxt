@@ -49,10 +49,13 @@ WXT defaults to MV2 for Firefox/Safari and MV3 for Chrome/Edge/others. Browser-s
 
 ### Storage: OPFS
 
-The extension uses the Origin Private File System (OPFS) for local storage. OPFS provides a real directory/file hierarchy accessible via `navigator.storage.getDirectory()`:
+The extension uses the Origin Private File System (OPFS) for local storage. OPFS provides a real directory/file hierarchy accessible via `navigator.storage.getDirectory()`. All extension data lives under a `/kaya` root directory, symmetrical with the daemon's `~/.kaya/` layout:
 
-* `anga/` -- bookmarks (`.url`), text quotes (`.md`), images, and other files
-* `meta/` -- TOML metadata files linking anga to tags/notes
+* `/kaya/anga/` -- bookmarks (`.url`), text quotes (`.md`), images, and other files
+* `/kaya/meta/` -- TOML metadata files linking anga to tags/notes
+* `/kaya/words/` -- plaintext copies of anga for full-text search, per [@adr-0005-full-text-search.md](./doc/arch/adr-0005-full-text-search.md)
+
+The `words/` directory has a nested structure: `/kaya/words/{anga}/{filename}`. Words are download-only from the server (the server generates plaintext copies via background jobs).
 
 OPFS is available in Chrome 86+, Firefox 111+, and Safari 15.2+. The async `createWritable()` API works in MV3 service workers.
 
@@ -66,6 +69,7 @@ The extension syncs directly with the Save Button Server using `fetch()` and HTT
 2. Diff against local OPFS file listing
 3. Download files missing locally, upload files missing on server
 4. Same for `meta/`
+5. Sync `words/` (download-only): `GET /api/v1/{email}/words` lists anga dirs, then `GET /api/v1/{email}/words/{anga}` lists files within each, then download missing files
 
 Sync runs on two triggers:
 * **Periodic**: `chrome.alarms` fires every 1 minute (MV3-safe)
@@ -140,16 +144,20 @@ The daemon (`/daemon`) is a standalone Rust binary that listens on `localhost:21
 ### Purpose
 
 The daemon provides two services:
-1. **Disk mirroring**: Receives files from the extension and writes them to `~/.kaya/anga/` and `~/.kaya/meta/`
-2. **Server sync**: Independently syncs `~/.kaya/` with the Save Button Server every 60 seconds
+1. **Disk mirroring**: Receives files from the extension and writes them to `~/.kaya/anga/`, `~/.kaya/meta/`, and `~/.kaya/words/`
+2. **Server sync**: Independently syncs `~/.kaya/` with the Save Button Server every 60 seconds (including `words/`, which is download-only from the server)
 
 ### HTTP API
 
 * `GET /health` -- returns 200 OK
 * `GET /anga` -- lists files in `~/.kaya/anga/`
 * `GET /meta` -- lists files in `~/.kaya/meta/`
+* `GET /words` -- lists anga subdirectories in `~/.kaya/words/`
+* `GET /words/{anga}` -- lists files in `~/.kaya/words/{anga}/`
 * `POST /anga/{filename}` -- writes request body to `~/.kaya/anga/{filename}`
 * `POST /meta/{filename}` -- writes request body to `~/.kaya/meta/{filename}`
+* `POST /words/{anga}/{filename}` -- writes request body to `~/.kaya/words/{anga}/{filename}`
+* `POST /config` -- accepts JSON `{"server", "email", "password"}`, encrypts password, saves to `~/.kaya/.config`
 
 ### Communication with Extension
 
@@ -157,15 +165,15 @@ The extension's `daemon.ts` module pushes copies of saved files to the daemon ov
 
 ### Config
 
-The daemon reads its server sync config from `~/.kaya/.config` (TOML format with encrypted password). This is independent of the extension's `browser.storage.local` config.
+The daemon reads its server sync config from `~/.kaya/.config` (TOML format with encrypted password). The extension can push config to the daemon via `POST /config`, which accepts a plaintext password, encrypts it, and saves to `~/.kaya/.config`. The extension also pushes config on each periodic sync cycle, so the daemon picks up credentials even if it starts after the user has configured the extension.
 
 ### Logging
 
-Daemon logs go to `~/.kaya/log`.
+Daemon logs go to `~/.kaya/daemon-log`.
 
 ### Packaging
 
-The daemon has packaged installers for Windows (MSI), macOS (PKG), and Linux (DEB, RPM).
+The daemon has packaged installers for Windows (MSI), macOS (PKG), and Linux (DEB, RPM, AUR).
 
 
 ## Testing

@@ -1,11 +1,23 @@
 import { type Config } from "./config";
-import { type Collection, listFiles, readFile, writeFile } from "./opfs";
+import {
+  type Collection,
+  listFiles,
+  readFile,
+  writeFile,
+  listWordsAngaDirs,
+  listWordsFiles,
+  writeWordsFile,
+} from "./opfs";
 
 function authHeader(config: Config): string {
   return "Basic " + btoa(`${config.email}:${config.password}`);
 }
 
-function apiUrl(config: Config, collection: Collection, filename?: string): string {
+function apiUrl(
+  config: Config,
+  collection: Collection,
+  filename?: string,
+): string {
   const base = `${config.server.replace(/\/+$/, "")}/api/v1/${encodeURIComponent(config.email)}/${collection}`;
   return filename ? `${base}/${encodeURIComponent(filename)}` : base;
 }
@@ -40,7 +52,9 @@ async function fetchServerFileList(
   });
 
   if (!response.ok) {
-    throw new Error(`Server returned ${response.status} for ${collection} listing`);
+    throw new Error(
+      `Server returned ${response.status} for ${collection} listing`,
+    );
   }
 
   const text = await response.text();
@@ -62,7 +76,9 @@ async function downloadFile(
   });
 
   if (!response.ok) {
-    throw new Error(`Download failed for ${collection}/${filename}: ${response.status}`);
+    throw new Error(
+      `Download failed for ${collection}/${filename}: ${response.status}`,
+    );
   }
 
   const content = await response.arrayBuffer();
@@ -88,7 +104,9 @@ async function uploadFile(
 
   // 409 Conflict = file already exists, that's fine
   if (!response.ok && response.status !== 409) {
-    throw new Error(`Upload failed for ${collection}/${filename}: ${response.status}`);
+    throw new Error(
+      `Upload failed for ${collection}/${filename}: ${response.status}`,
+    );
   }
 }
 
@@ -120,15 +138,93 @@ async function syncCollection(
   return { downloaded: toDownload.length, uploaded: toUpload.length };
 }
 
+// ---------------------------------------------------------------------------
+// Words sync (download-only, nested: words/{anga}/{filename})
+// ---------------------------------------------------------------------------
+
+function wordsApiUrl(config: Config, ...parts: string[]): string {
+  const base = `${config.server.replace(/\/+$/, "")}/api/v1/${encodeURIComponent(config.email)}/words`;
+  if (parts.length === 0) return base;
+  return base + "/" + parts.map(encodeURIComponent).join("/");
+}
+
+async function fetchWordsListing(
+  config: Config,
+  ...pathParts: string[]
+): Promise<Set<string>> {
+  const response = await fetch(wordsApiUrl(config, ...pathParts), {
+    headers: { Authorization: authHeader(config) },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Server returned ${response.status} for words listing`);
+  }
+
+  const text = await response.text();
+  const items = new Set<string>();
+  for (const line of text.split("\n")) {
+    const trimmed = decodeURIComponent(line.trim());
+    if (trimmed) items.add(trimmed);
+  }
+  return items;
+}
+
+export interface WordsDownload {
+  anga: string;
+  filename: string;
+  content: string;
+}
+
+export interface WordsSyncResult {
+  downloaded: number;
+  files: WordsDownload[];
+}
+
+export async function syncWords(config: Config): Promise<WordsSyncResult> {
+  const files: WordsDownload[] = [];
+
+  // Level 1: list anga directories from server
+  const serverAngaDirs = await fetchWordsListing(config);
+
+  for (const anga of serverAngaDirs) {
+    // Level 2: list files within this anga dir from server
+    const serverFiles = await fetchWordsListing(config, anga);
+    const localFiles = new Set(await listWordsFiles(anga));
+
+    for (const filename of serverFiles) {
+      if (localFiles.has(filename)) continue;
+
+      // Download missing file
+      const response = await fetch(wordsApiUrl(config, anga, filename), {
+        headers: { Authorization: authHeader(config) },
+      });
+
+      if (response.ok) {
+        const content = await response.text();
+        await writeWordsFile(anga, filename, content);
+        files.push({ anga, filename, content });
+      }
+    }
+  }
+
+  return { downloaded: files.length, files };
+}
+
+// ---------------------------------------------------------------------------
+// Top-level sync
+// ---------------------------------------------------------------------------
+
 export interface SyncResult {
   anga: { downloaded: number; uploaded: number };
   meta: { downloaded: number; uploaded: number };
+  words: WordsSyncResult;
 }
 
 export async function syncWithServer(config: Config): Promise<SyncResult> {
   const anga = await syncCollection(config, "anga");
   const meta = await syncCollection(config, "meta");
-  return { anga, meta };
+  const words = await syncWords(config);
+  return { anga, meta, words };
 }
 
 export async function testConnection(config: Config): Promise<void> {

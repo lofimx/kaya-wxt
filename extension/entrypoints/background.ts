@@ -3,7 +3,11 @@ import { generateTimestamp } from "@/utils/timestamp";
 import { writeFile, readAllBookmarkUrls } from "@/utils/opfs";
 import { loadConfig } from "@/utils/config";
 import { syncWithServer, testConnection } from "@/utils/sync";
-import { pushFileToDaemon } from "@/utils/daemon";
+import {
+  pushFileToDaemon,
+  pushConfigToDaemon,
+  pushWordsFileToDaemon,
+} from "@/utils/daemon";
 
 let knownBookmarkedUrls = new Set<string>();
 
@@ -53,16 +57,21 @@ async function triggerSync() {
   try {
     const config = await loadConfig();
     if (!config.configured || !config.email || !config.password) return;
+
+    // Push config to daemon on each sync cycle (in case daemon started after config was set)
+    pushConfigToDaemon(config);
+
     const result = await syncWithServer(config);
-    const total =
-      result.anga.downloaded +
-      result.anga.uploaded +
-      result.meta.downloaded +
-      result.meta.uploaded;
-    if (total > 0) {
-      console.log(
-        `Sync: ${result.anga.downloaded + result.meta.downloaded} downloaded, ${result.anga.uploaded + result.meta.uploaded} uploaded`,
-      );
+    // Push downloaded words files to daemon
+    for (const w of result.words.files) {
+      pushWordsFileToDaemon(w.anga, w.filename, w.content);
+    }
+
+    const totalDown =
+      result.anga.downloaded + result.meta.downloaded + result.words.downloaded;
+    const totalUp = result.anga.uploaded + result.meta.uploaded;
+    if (totalDown > 0 || totalUp > 0) {
+      console.log(`Sync: ${totalDown} downloaded, ${totalUp} uploaded`);
       await refreshBookmarkUrls();
       await updateIconForActiveTab();
     }

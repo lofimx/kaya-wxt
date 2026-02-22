@@ -31,7 +31,7 @@ struct Cli {
 }
 
 fn setup_logging() {
-    let log_path = get_kaya_dir().join("log");
+    let log_path = get_kaya_dir().join("daemon-log");
 
     let base = fern::Dispatch::new()
         .format(|out, message, record| {
@@ -98,6 +98,10 @@ fn get_meta_dir() -> PathBuf {
     get_kaya_dir().join("meta")
 }
 
+fn get_words_dir() -> PathBuf {
+    get_kaya_dir().join("words")
+}
+
 fn get_config_path() -> PathBuf {
     get_kaya_dir().join(".config")
 }
@@ -105,6 +109,7 @@ fn get_config_path() -> PathBuf {
 fn ensure_directories() -> io::Result<()> {
     fs::create_dir_all(get_anga_dir())?;
     fs::create_dir_all(get_meta_dir())?;
+    fs::create_dir_all(get_words_dir())?;
     Ok(())
 }
 
@@ -210,8 +215,9 @@ fn sync_with_server() -> Result<(), KayaError> {
         sync_collection(&client, &server, &email, &password, "anga")?;
     let (meta_downloaded, meta_uploaded) =
         sync_collection(&client, &server, &email, &password, "meta")?;
+    let words_downloaded = sync_words(&client, &server, &email, &password)?;
 
-    let total_downloaded = anga_downloaded + meta_downloaded;
+    let total_downloaded = anga_downloaded + meta_downloaded + words_downloaded;
     let total_uploaded = anga_uploaded + meta_uploaded;
 
     if total_downloaded > 0 || total_uploaded > 0 {
@@ -367,6 +373,88 @@ fn upload_file(
     Ok(())
 }
 
+// ---------------------------------------------------------------------------
+// Words sync (download-only from server, nested: words/{anga}/{filename})
+// ---------------------------------------------------------------------------
+
+fn sync_words(
+    client: &reqwest::blocking::Client,
+    server: &str,
+    email: &str,
+    password: &str,
+) -> Result<usize, KayaError> {
+    let url = format!(
+        "{}/api/v1/{}/words",
+        server.trim_end_matches('/'),
+        urlencoding::encode(email),
+    );
+
+    let response = client.get(&url).basic_auth(email, Some(password)).send()?;
+
+    if !response.status().is_success() {
+        return Err(KayaError::Http(response.error_for_status().unwrap_err()));
+    }
+
+    let anga_dirs: HashSet<String> = parse_server_file_listing(&response.text()?);
+    let mut downloaded = 0;
+
+    for anga in &anga_dirs {
+        let anga_url = format!(
+            "{}/api/v1/{}/words/{}",
+            server.trim_end_matches('/'),
+            urlencoding::encode(email),
+            urlencoding::encode(anga),
+        );
+
+        let response = client
+            .get(&anga_url)
+            .basic_auth(email, Some(password))
+            .send()?;
+
+        if !response.status().is_success() {
+            continue;
+        }
+
+        let server_files: HashSet<String> = parse_server_file_listing(&response.text()?);
+
+        let local_anga_dir = get_words_dir().join(anga);
+        let local_files: HashSet<String> = if local_anga_dir.exists() {
+            fs::read_dir(&local_anga_dir)?
+                .filter_map(|e| e.ok())
+                .filter(|e| e.path().is_file())
+                .filter_map(|e| e.file_name().into_string().ok())
+                .collect()
+        } else {
+            HashSet::new()
+        };
+
+        for filename in server_files.difference(&local_files) {
+            let file_url = format!(
+                "{}/api/v1/{}/words/{}/{}",
+                server.trim_end_matches('/'),
+                urlencoding::encode(email),
+                urlencoding::encode(anga),
+                urlencoding::encode(filename),
+            );
+
+            let response = client
+                .get(&file_url)
+                .basic_auth(email, Some(password))
+                .send()?;
+
+            if response.status().is_success() {
+                let content = response.bytes()?;
+                fs::create_dir_all(&local_anga_dir)?;
+                fs::write(local_anga_dir.join(filename), content)?;
+                log::info!("  downloading words/{}/{}", anga, filename);
+                downloaded += 1;
+            }
+        }
+    }
+
+    Ok(downloaded)
+}
+
 fn mime_type_for(filename: &str) -> String {
     let ext = filename.rsplit('.').next().unwrap_or("").to_lowercase();
     match ext.as_str() {
@@ -488,7 +576,150 @@ fn handle_request(request: Request) {
         return;
     }
 
+    // Route: GET /words -- list anga subdirectories under ~/.kaya/words/
+    if method == Method::Get && url == "/words" {
+        match list_words_dirs() {
+            Ok(listing) => respond_ok(request, &listing),
+            Err(e) => respond_error(request, 500, &e.to_string()),
+        }
+        return;
+    }
+
+    // Route: GET /words/{anga} -- list files in a words anga subdir
+    if method == Method::Get && url.starts_with("/words/") && url.matches('/').count() == 2 {
+        let anga = urlencoding::decode(&url[7..])
+            .unwrap_or_default()
+            .into_owned();
+        if anga.is_empty() || anga.contains('/') || anga.contains("..") {
+            respond_error(request, 400, "Invalid anga name");
+            return;
+        }
+        match list_words_files(&anga) {
+            Ok(listing) => respond_ok(request, &listing),
+            Err(e) => respond_error(request, 500, &e.to_string()),
+        }
+        return;
+    }
+
+    // Route: POST /words/{anga}/{filename} -- write a words file
+    if method == Method::Post && url.starts_with("/words/") && url.matches('/').count() == 3 {
+        let path = &url[7..]; // strip "/words/"
+        if let Some((anga, filename)) = path.split_once('/') {
+            let anga = urlencoding::decode(anga).unwrap_or_default().into_owned();
+            let filename = urlencoding::decode(filename)
+                .unwrap_or_default()
+                .into_owned();
+            if anga.is_empty()
+                || anga.contains("..")
+                || filename.is_empty()
+                || filename.contains('/')
+                || filename.contains("..")
+            {
+                respond_error(request, 400, "Invalid path");
+                return;
+            }
+            match write_words_file(request, &anga, &filename) {
+                Ok(()) => {}
+                Err(e) => log::error!("Failed to write words/{}/{}: {}", anga, filename, e),
+            }
+            return;
+        }
+        respond_error(request, 400, "Invalid path");
+        return;
+    }
+
+    // Route: POST /config -- receive config from extension
+    if method == Method::Post && url == "/config" {
+        match handle_config_post(request) {
+            Ok(()) => {}
+            Err(e) => log::error!("Failed to save config: {}", e),
+        }
+        return;
+    }
+
     respond_error(request, 404, "Not found");
+}
+
+#[derive(Deserialize)]
+struct IncomingConfig {
+    server: String,
+    email: String,
+    password: String,
+}
+
+fn handle_config_post(mut request: Request) -> Result<(), KayaError> {
+    let mut body = String::new();
+    request
+        .as_reader()
+        .read_to_string(&mut body)
+        .map_err(KayaError::Io)?;
+
+    let incoming: IncomingConfig = serde_json::from_str(&body)?;
+
+    let key = generate_encryption_key();
+    let encrypted = encrypt_password(&incoming.password, &key)?;
+
+    let config = Config {
+        server: Some(incoming.server),
+        email: Some(incoming.email),
+        encrypted_password: Some(encrypted),
+        encryption_key: Some(BASE64.encode(key)),
+    };
+
+    save_config(&config)?;
+    log::info!("Config updated via POST /config");
+
+    respond_ok(request, r#"{"ok":true}"#);
+    Ok(())
+}
+
+fn list_words_dirs() -> Result<String, KayaError> {
+    let dir = get_words_dir();
+    if !dir.exists() {
+        return Ok(String::new());
+    }
+
+    let mut names: Vec<String> = fs::read_dir(&dir)?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().is_dir())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .filter(|n| !n.starts_with('.'))
+        .collect();
+
+    names.sort();
+    Ok(names.join("\n"))
+}
+
+fn list_words_files(anga: &str) -> Result<String, KayaError> {
+    let dir = get_words_dir().join(anga);
+    if !dir.exists() {
+        return Ok(String::new());
+    }
+
+    let mut names: Vec<String> = fs::read_dir(&dir)?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().is_file())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .collect();
+
+    names.sort();
+    Ok(names.join("\n"))
+}
+
+fn write_words_file(mut request: Request, anga: &str, filename: &str) -> Result<(), KayaError> {
+    let mut body = Vec::new();
+    request
+        .as_reader()
+        .read_to_end(&mut body)
+        .map_err(KayaError::Io)?;
+
+    let dir = get_words_dir().join(anga);
+    fs::create_dir_all(&dir)?;
+    fs::write(dir.join(filename), &body)?;
+    log::info!("Wrote words/{}/{}", anga, filename);
+
+    respond_ok(request, "ok");
+    Ok(())
 }
 
 fn list_files(collection: &str) -> Result<String, KayaError> {

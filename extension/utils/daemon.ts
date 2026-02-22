@@ -1,3 +1,5 @@
+import { type Config } from "./config";
+
 const DAEMON_BASE = "http://localhost:21420";
 const TIMEOUT_MS = 2000;
 
@@ -38,6 +40,40 @@ export async function pushFileToDaemon(
         body,
       },
     );
+  } catch {
+    // Daemon is optional -- silently ignore failures
+  }
+}
+
+export async function pushWordsFileToDaemon(
+  anga: string,
+  filename: string,
+  content: string,
+): Promise<void> {
+  try {
+    await fetchWithTimeout(
+      `${DAEMON_BASE}/words/${encodeURIComponent(anga)}/${encodeURIComponent(filename)}`,
+      {
+        method: "POST",
+        body: new TextEncoder().encode(content),
+      },
+    );
+  } catch {
+    // Daemon is optional -- silently ignore failures
+  }
+}
+
+export async function pushConfigToDaemon(config: Config): Promise<void> {
+  try {
+    await fetchWithTimeout(`${DAEMON_BASE}/config`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        server: config.server,
+        email: config.email,
+        password: config.password,
+      }),
+    });
   } catch {
     // Daemon is optional -- silently ignore failures
   }

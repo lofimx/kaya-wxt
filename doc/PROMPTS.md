@@ -50,3 +50,13 @@ Refactored the architecture so the extension is self-sufficient:
 - **Optional daemon** on `localhost:21420` mirrors files to `~/.kaya/` for users who want disk access
 - Rename `nativehost/` to `daemon/`, remove native messaging dependencies
 - See `doc/plan/2026-02-22-r-opfs-storage-and-optional-daemon.md` and `doc/arch/adr-0004-opfs-storage.md`
+
+### Adjustments
+
+Adjust `doc/plan/2026-02-22-r-opfs-storage-and-optional-daemon.md` based on [@PLAN.md](file:///home/steven/work/lofi/kaya-wxt/doc/plan/PLAN.md) with the following changes:
+
+* Ensure files stored in OPFS follow a convention symmetrical to the daemon's home directory layout, as per [@adr-0001-core-concept.md](file:///home/steven/work/lofi/kaya-wxt/doc/arch/adr-0001-core-concept.md), [@adr-0003-metadata.md](file:///home/steven/work/lofi/kaya-wxt/doc/arch/adr-0003-metadata.md), and so on. The root directory in OPFS for the browser extension should be `/kaya`: `/kaya/anga`, `/kaya/meta`, etc.
+* Add a config endpoint to the daemon's HTTP API (e.g. `POST /config`) so the extension can push a server URL and credentials to it
+* The daemon should log to `~/.kaya/daemon-log` instead of `~/.kaya/log`.
+* Mention the AUR in addition to RPM/DEB in `AGENTS.md`
+* Sync the Full-Text Search "words" API in both the browser extension (OPFS) and daemon (`~/.kaya/words`), according to [@adr-0005-full-text-search.md](file:///home/steven/work/lofi/kaya-wxt/doc/arch/adr-0005-full-text-search.md).

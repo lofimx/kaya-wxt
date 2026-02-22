@@ -1,4 +1,5 @@
 import { browser } from "wxt/browser";
+import { pushConfigToDaemon } from "@/utils/daemon";
 
 const serverInput = document.getElementById("server") as HTMLInputElement;
 const emailInput = document.getElementById("email") as HTMLInputElement;
@@ -69,6 +70,19 @@ async function saveSettings() {
     }
 
     await browser.storage.local.set(settings);
+
+    // Push config to daemon if running (daemon is optional)
+    const stored = await browser.storage.local.get([
+      "server",
+      "email",
+      "password",
+    ]);
+    pushConfigToDaemon({
+      server: stored.server as string,
+      email: stored.email as string,
+      password: stored.password as string,
+      configured: true,
+    });
 
     showStatus("Settings saved successfully", "success");
     passwordInput.value = PASSWORD_SENTINEL;
