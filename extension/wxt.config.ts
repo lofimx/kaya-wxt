@@ -17,6 +17,7 @@ export default defineConfig({
       "notifications",
       "alarms",
     ],
+    host_permissions: ["<all_urls>"],
     browser_specific_settings: {
       gecko: {
         id: "org.savebutton@savebutton.org",
