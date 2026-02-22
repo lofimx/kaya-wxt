@@ -60,3 +60,7 @@ Adjust `doc/plan/2026-02-22-r-opfs-storage-and-optional-daemon.md` based on [@PL
 * The daemon should log to `~/.kaya/daemon-log` instead of `~/.kaya/log`.
 * Mention the AUR in addition to RPM/DEB in `AGENTS.md`
 * Sync the Full-Text Search "words" API in both the browser extension (OPFS) and daemon (`~/.kaya/words`), according to [@adr-0005-full-text-search.md](file:///home/steven/work/lofi/kaya-wxt/doc/arch/adr-0005-full-text-search.md).
+
+## BUG: Failed to Fetch
+
+When I enter my credentials or use "Test Connection", I get a "Connection Failed: Failed to fetch" error.

@@ -12,7 +12,7 @@ Save bookmarks, quotes, and images with Save Button
 
 ## Long Description
 
-Save Button is a cross-browser bookmarking extension that saves your bookmarks, text quotes, and images locally and syncs them to your own server.
+Save Button is a cross-browser, open-source, local-first bookmarking extension that saves your bookmarks, text quotes, and images locally and syncs them to your own server.
 
 Click the toolbar button to bookmark any page. Right-click text or images to save them. Everything is stored locally in the browser and synced to your Save Button server over a simple HTTP API.
 
@@ -37,7 +37,7 @@ https://savebutton.com
 
 ## Privacy Policy URL
 
-https://savebutton.com/privacy
+https://savebutton.org/privacy_policy.html
 
 ## Privacy Policy Summary
 
