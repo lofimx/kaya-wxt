@@ -153,8 +153,8 @@ Safari extensions are packaged as macOS/iOS apps via Xcode. The Xcode project li
 2. Open in Xcode: `open "safari/Save Button/Save Button.xcodeproj"`
 3. Configure signing: Select your Apple Developer team for all 4 targets, enable automatic signing
 4. Register App IDs in App Store Connect:
-   - `org.savebutton.app` (container app)
-   - `org.savebutton.app.Extension` (web extension target)
+   - `org.savebutton.safari` (container app)
+   - `org.savebutton.safari.Extension` (web extension target)
 5. Add App Group capability: `group.org.savebutton` to both container and extension targets
 6. Product > Archive (select "Any Mac" or specific iOS device/simulator)
 7. In the Organizer: Distribute App > App Store Connect
@@ -167,8 +167,8 @@ Safari extensions are packaged as macOS/iOS apps via Xcode. The Xcode project li
    - Submit for review
 
 **Bundle identifiers:**
-- Container app: `org.savebutton.app`
-- Extension: `org.savebutton.app.Extension`
+- Container app: `org.savebutton.safari`
+- Extension: `org.savebutton.safari.Extension`
 
 **Deployment targets:**
 - macOS 12.0 (Safari 15.2+ for OPFS support)

@@ -43,7 +43,7 @@ if [[ "$REGEN" == true ]] || [[ ! -d "$SAFARI_DIR" ]]; then
   xcrun safari-web-extension-converter "$WXT_OUTPUT" \
     --project-location "$SAFARI_DIR" \
     --app-name "Save Button" \
-    --bundle-identifier org.savebutton.app \
+    --bundle-identifier org.savebutton.safari \
     --no-open
 
   echo ""

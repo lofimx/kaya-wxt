@@ -83,8 +83,8 @@ These steps must be completed in Xcode and App Store Connect before the Safari e
 1. Open the project: `open "safari/Save Button/Save Button.xcodeproj"`
 2. Select your Apple Developer team for all 4 targets (iOS app, macOS app, iOS extension, macOS extension) and enable automatic signing
 3. Register App IDs in the Apple Developer portal:
-   - `org.savebutton.app` (container app)
-   - `org.savebutton.app.Extension` (web extension)
+   - `org.savebutton.safari` (container app)
+   - `org.savebutton.safari.Extension` (web extension)
 4. Add the **App Groups** capability (`group.org.savebutton`) to both the container app and extension targets on both platforms so they can share data on iOS
 
 ### Local testing

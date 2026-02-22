@@ -1,5 +1,7 @@
 # Historical Prompts
 
+This file should **not be modified by agents.**
+
 ## Rewrite `kaya-firefox` to `kaya-wxt` to support all browsers
 
 Read and follow the instructions in [@PLAN.md](file:///home/steven/work/deobald/kaya-firefox/doc/plan/PLAN.md).
@@ -94,3 +96,13 @@ Safari doesn't support `browser.notifications.create()`. Replaced `showNotificat
 - Updated `bin/generate-icons.sh` to produce green variants
 - Removed `notifications` permission from `wxt.config.ts`
 - Added "Safari: Manual Tasks" section to README.md
+
+### Bundle ID / App ID - Need to Switch
+
+Because we already have an App ID `org.savebutton.app` for the main iOS app (https://github.com/deobald/kaya-flutter), which does not share code with the Safari Extension, we need to change the Safari container app and Safari extension target Bundle IDs to use `org.savebutton.safari` as their root, like so:
+
+|        Target           |             Bundle ID            |        App Store Name        |
+|-------------------------|----------------------------------|------------------------------|
+| Full app                | `org.savebutton.app` (unchanged) | Save Button                  |
+| Safari container app    | `org.savebutton.safari`          | Save Button for Safari       |
+| Safari extension target | `org.savebutton.safari.Extension | (internal, not user-visible) |
