@@ -1,19 +1,16 @@
 # Guide for LLMs
 
-This repository contains two tightly related projects:
+This repository contains two projects:
 
 * `/extension` contains a cross-browser extension built with [WXT](https://wxt.dev/)
-* `/nativehost` contains a small, native messaging host written in Rust
+* `/daemon` contains an optional local daemon written in Rust
 
 Both are named "Save Button" to the user.
 
 ### Identifiers
 
-* **Native messaging host name**: `org.savebutton.nativehost`
 * **Firefox extension ID (gecko)**: `org.savebutton@savebutton.org`
 * **Chrome/Edge extension IDs**: Assigned after first store publish (see README.md TODO)
-
-These identifiers appear in native messaging manifests (`org.savebutton.nativehost.json`) and the WXT config (`wxt.config.ts`). As long as they are correct and symmetrical across the extension and the native host, the exact values don't matter.
 
 ## Planning
 
@@ -33,7 +30,12 @@ This file will get large, over time, so only prioritize reading through it if yo
 
 ## Architecture
 
-The browser extension and the native host work together as though they were a single program. Together, they follow the Architectural Decision Records listed in [@arch](./doc/arch): the native host saves files to, and reads files from, the directories in `~/.kaya/`. It also performs a periodic sync with the HTTP service listed in [@adr-0002-service-sync.md](./doc/arch/adr-0002-service-sync.md). The browser extension primarily exists to provide the user a minimal user interface.
+The browser extension is self-sufficient. It stores files locally using **OPFS** (Origin Private File System) and syncs them directly with the Save Button Server over HTTP. An optional local daemon can mirror files to `~/.kaya/` on disk for users who want filesystem access to their saved data.
+
+The extension follows the Architectural Decision Records listed in [@arch](./doc/arch):
+* Files ("anga") and metadata ("meta") are stored as real files in OPFS directories
+* The extension syncs OPFS contents with the server per [@adr-0002-service-sync.md](./doc/arch/adr-0002-service-sync.md)
+* The optional daemon also syncs with the server independently and writes files to `~/.kaya/`
 
 ### Supported Browsers
 
@@ -45,80 +47,44 @@ The extension is built with WXT to support multiple browsers from a single codeb
 
 WXT defaults to MV2 for Firefox/Safari and MV3 for Chrome/Edge/others. Browser-specific code should use `import.meta.env.BROWSER` or `import.meta.env.MANIFEST_VERSION` for conditional logic.
 
-### Logging
+### Storage: OPFS
 
-Logs go in `~/.kaya/log`.
+The extension uses the Origin Private File System (OPFS) for local storage. OPFS provides a real directory/file hierarchy accessible via `navigator.storage.getDirectory()`:
 
-Log when any significant event occurs. This includes human-triggered messages from the frontend, errors, non-empty file sync events, and so on.
+* `anga/` -- bookmarks (`.url`), text quotes (`.md`), images, and other files
+* `meta/` -- TOML metadata files linking anga to tags/notes
+
+OPFS is available in Chrome 86+, Firefox 111+, and Safari 15.2+. The async `createWritable()` API works in MV3 service workers.
+
+**Important**: OPFS data is deleted when the extension is uninstalled. The server is the durable store; periodic sync ensures data is backed up.
+
+### Sync
+
+The extension syncs directly with the Save Button Server using `fetch()` and HTTP Basic Auth:
+
+1. `GET /api/v1/{email}/anga` -- server returns newline-separated filenames
+2. Diff against local OPFS file listing
+3. Download files missing locally, upload files missing on server
+4. Same for `meta/`
+
+Sync runs on two triggers:
+* **Periodic**: `chrome.alarms` fires every 1 minute (MV3-safe)
+* **Immediate**: After each anga/meta save operation
 
 ### Errors
 
-Errors must be signaled back to the browser extension from the native host / sync engine. They should also be logged to `~/.kaya/log` for easy inspection.
+If the browser extension experiences an error during save or sync, it should display it to the user.
 
-### Messaging
+### Data Format
 
-The native host communicates with the browser extension via JSON messages. The extension uses the browser's native messaging API (`browser.runtime.connectNative`) to communicate with the native host over STDIN/STDOUT.
-
-The format of the JSON messages is symmetrical to the Anga and Meta files and APIs mentioned under [@adr-0002-service-sync.md](./doc/arch/adr-0002-service-sync.md):
+Anga and Meta files follow the formats from the ADRs:
 
 * Anga represent a single file: a `.url` bookmark, a `.md` note, or any other arbitrary file
-  * all anga live under `~/.kaya/anga/`
-* Meta represent only `.toml` files, following the format from [@adr-0003-metadata.md](./doc/arch/adr-0003-metadata.md)
-  * all metadata lives under `~/.kaya/meta/`
-
-All messaging between the browser extension and the native host should be as simple, flat, and symmetrical as possible. However, the JSON message can and should set a "type" key, declaring either "text" or "base64", which determines which key to read from. `.url` and `.md` files will be passed as text. Images will be passed as base64. For example:
-
-```json
-{
-  "message": "anga",
-  "filename": "2026-01-27T171207-wakarimasen.png",
-  "type": "base64",
-  "base64": "iVBORw0KGgoAAAANSUhEUgAA...",
-  ...
-}
-
-{
-  "message": "anga",
-  "filename": "2025-01-27T171207-quote.md",
-  "type": "text",
-  "text": "Four score and seven years ago, the prime minister of Canada declared the Rules Based Order to be a sham.",
-  ...
-}
-
-{
-  "message": "anga",
-  "filename": "2026-01-20T000000_123000000-microsoft-com.url",
-  "type": "text",
-  "text": "[InternetShortcut]\nURL=https://www.microsoft.com/en-ca/surface\n",
-  ...
-}
-
-{
-  "message": "meta",
-  "filename": "2026-01-27T171207-note.toml",
-  "type": "text",
-  "text": "[anga]\nfilename = \"2026-01-28T205208-bookmark.url\"\n[meta]\nnote = '''This is a longer note, containing a reminder to myself that I was a guest on this podcast. It cannot be multi-line because it is TOML embedded in JSON.'''",
-  ...
-}
-```
-
-### Messaging: Config
-
-The browser extension can configure the native host so it knows where the Save Button Server is. It sends a message formatted like so:
-
-```json
-{
-  "message": "config",
-  "server": "http://localhost:3000",
-  "email": "steven@deobald.ca",
-  "password": "some-secret-password!",
-  ...
-}
-```
+* Meta represent `.toml` files, following the format from [@adr-0003-metadata.md](./doc/arch/adr-0003-metadata.md)
 
 ### Bookmarks
 
-Bookmarks will follow the file format `~/.kaya/anga/2026-01-27T171207-www-deobald-ca.url`, where the `www-deobald-ca` portion is the domain and subdomains in the URL, with special characters and periods (`.`) turned into hyphens (`-`). Bookmarks are created by clicking the extension's Toolbar Button.
+Bookmarks will follow the file format `anga/2026-01-27T171207-www-deobald-ca.url`, where the `www-deobald-ca` portion is the domain and subdomains in the URL, with special characters and periods (`.`) turned into hyphens (`-`). Bookmarks are created by clicking the extension's Toolbar Button.
 
 Bookmarks are saved as `.url` files which have the format:
 
@@ -133,34 +99,30 @@ URL=https://perkeep.org/
 The browser extension is built with [WXT](https://wxt.dev/) using vanilla TypeScript. WXT generates browser-specific builds (Firefox MV2, Chrome MV3, Edge MV3, etc.) from a single codebase.
 
 The extension lives under `/extension` and uses WXT conventions:
-* `entrypoints/` — background scripts, popup, options page, etc.
-* `public/` — static assets (icons)
-* `utils/` — shared TypeScript utilities
-* `wxt.config.ts` — WXT configuration and manifest settings
+* `entrypoints/` -- background scripts, popup, options page, etc.
+* `public/` -- static assets (icons)
+* `utils/` -- shared TypeScript utilities (`opfs.ts`, `sync.ts`, `config.ts`, `daemon.ts`, `timestamp.ts`)
+* `wxt.config.ts` -- WXT configuration and manifest settings
 
 ### Config
 
-The user can right-click the Toolbar Button (see "Toolbar Button") to get a context menu from which they can choose "Preferences" and configure the Save Button Server location (defaults to https://savebutton.com), email, and password. These should be sent to the native host using a Config Message (see "Messaging: Config").
+The user can right-click the Toolbar Button (see "Toolbar Button") to get a context menu from which they can choose "Preferences" and configure the Save Button Server location (defaults to https://savebutton.com), email, and password. Config is stored in `browser.storage.local`.
 
 The first time the user clicks the Toolbar Button to save a bookmark, the extension should prompt them with a popup to enter their Save Button Server, email, and password.
 
 ### Toolbar Button
 
-The extension must provide a toolbar button, similar to other bookmark managers like Pocket. If a website is currently being visited which hasn't been bookmarked (ie. saved into a file with the format `~/.kaya/anga/2026-01-27T171207-some-bookmark-com.url`), the button should appear like [@icon.svg](./doc/design/icon.svg), but grey. If the site has been bookmarked (ie. one of the files in `~/.kaya/anga/*` contains the URL already), the button should appear in full color.
+The extension must provide a toolbar button, similar to other bookmark managers like Pocket. If a website is currently being visited which hasn't been bookmarked (ie. saved into OPFS as an `anga/*.url` file containing that URL), the button should appear like [@icon.svg](./doc/design/icon.svg), but grey. If the site has been bookmarked, the button should appear in full color.
 
-If the user clicks the toolbar button, it should record a new bookmark, even if the user has bookmarked this site before. When the user clicks the button, a small popup with a textbox labelled "Add a Note" should show up, providing the user with the option to create note metadata. If the user clicks into the Note textbox, it remains visible until they hit <enter>. If they don't, it remains visible for 4 seconds and then disappears. If they choose to add a note, the note will be recorded under the `[meta]` header with the key `note = '''their note'''`, as described in [@adr-0003-metadata.md](./doc/arch/adr-0003-metadata.md), with one exception: the user cannot enter a newline or carriage return character and so multiline notes are not possible. This keeps things simple and prevents JSON formatting errors. The `filename =` key under the `[anga]` header should list the name of the anga (bookmark) file they just created by clicking the button.
+If the user clicks the toolbar button, it should record a new bookmark, even if the user has bookmarked this site before. When the user clicks the button, a small popup with a textbox labelled "Add a Note" should show up, providing the user with the option to create note metadata. If the user clicks into the Note textbox, it remains visible until they hit <enter>. If they don't, it remains visible for 4 seconds and then disappears. If they choose to add a note, the note will be recorded under the `[meta]` header with the key `note = '''their note'''`, as described in [@adr-0003-metadata.md](./doc/arch/adr-0003-metadata.md), with one exception: the user cannot enter a newline or carriage return character and so multiline notes are not possible. This keeps things simple. The `filename =` key under the `[anga]` header should list the name of the anga (bookmark) file they just created by clicking the button.
 
-To synchronize the datetime-stamp, as described in [@adr-0001-core-concept.md](./doc/arch/adr-0001-core-concept.md), the extension will choose "now" as of the time the button is pushed and send this to the native host so it can prefix both the Anga and Meta files with it.
+To synchronize the datetime-stamp, as described in [@adr-0001-core-concept.md](./doc/arch/adr-0001-core-concept.md), the extension will choose "now" as of the time the button is pushed and use this timestamp to prefix both the Anga and Meta files.
 
 ### Text and Images
 
 The user may also select text on a webpage or right-click an image and choose "Save To Kaya" from an option in the context menu. Text will be saved as a `.md` note, prefixed with the usual datetime-stamp and suffixed with `-quote.md`. Images will be saved as their existing file format, prefixed with the usual datetime-stamp but suffixed with their actual filename and file extension.
 
-Both text and images are sent with a regular Anga message to the native host, just as bookmarks are.
-
-### Errors
-
-If the browser extension experiences an error or receives an error back from the native host, it should display it to the user.
+Both text and images are written to OPFS and then synced, just as bookmarks are.
 
 ### Publishing
 
@@ -170,53 +132,40 @@ The extension should be published to each browser's extension store:
 * **Chrome**: [Chrome Web Store](https://chromewebstore.google.com/) via the Chrome Web Store API
 * **Edge**: [Edge Add-ons](https://microsoftedge.microsoft.com/addons/) via the Edge Add-ons API
 
-Do this last.
 
+## Optional Daemon
 
-## Native Host
+The daemon (`/daemon`) is a standalone Rust binary that listens on `localhost:21420`. It is entirely optional -- the extension works fully without it.
 
-### Messaging
+### Purpose
 
-The browser extension communicates with the native host via the browser's native messaging API. On the Rust side, all that should be required is the use of `serde_json` over STDIN and STDOUT. The native messaging protocol is identical across all browsers.
+The daemon provides two services:
+1. **Disk mirroring**: Receives files from the extension and writes them to `~/.kaya/anga/` and `~/.kaya/meta/`
+2. **Server sync**: Independently syncs `~/.kaya/` with the Save Button Server every 60 seconds
 
-When a messaging error is encountered, the native host should notify the browser extension of the error with an error description from Rust sent back as a string.
+### HTTP API
+
+* `GET /health` -- returns 200 OK
+* `GET /anga` -- lists files in `~/.kaya/anga/`
+* `GET /meta` -- lists files in `~/.kaya/meta/`
+* `POST /anga/{filename}` -- writes request body to `~/.kaya/anga/{filename}`
+* `POST /meta/{filename}` -- writes request body to `~/.kaya/meta/{filename}`
+
+### Communication with Extension
+
+The extension's `daemon.ts` module pushes copies of saved files to the daemon over localhost HTTP. Failures are silently ignored (the daemon is optional).
 
 ### Config
 
-When the native host receives a config message (see "Messaging: Config"), it should store the config in a simple key/value store on disk, in a way that will work well on Windows, MacOS, and Linux. The password should be encrypted at rest. The config can be stored in `~/.kaya/.config` if there is no better or more standard cross-platform location.
+The daemon reads its server sync config from `~/.kaya/.config` (TOML format with encrypted password). This is independent of the extension's `browser.storage.local` config.
 
-### Saving Messages
+### Logging
 
-All file ("anga") messages, including bookmarks, text, and images, should be saved to `~/.kaya/anga/`, in the format described in [@adr-0001-core-concept.md](./doc/arch/adr-0001-core-concept.md).
+Daemon logs go to `~/.kaya/log`.
 
-All metadata ("meta") messages should be saved to `~/.kaya/meta/`, in the format described in [@adr-0003-metadata.md](./doc/arch/adr-0003-metadata.md).
+### Packaging
 
-### Saving Bookmarks
-
-When the browser extension sends a message to save a bookmark, it will arrive as a multi-line string representing a Microsoft Windows-style `.url` file. See "Bookmarks" in this document.
-
-### Saving Text
-
-When the browser extension sends a message to save a quote, it will arrive as a string representing a Markdown file.
-
-### Saving Images
-
-When the browser extension sends a message to save an image, it will arrive as a Base64-encoded string, which the Rust code will need to decode. Chunking should not be necessary.
-
-### Sync
-
-Once per minute, the native host should sync the local files (anga and meta) with the Save Button Server over HTTP as per [@adr-0002-service-sync.md](./doc/arch/adr-0002-service-sync.md). You can follow the example found in [@sync.rb](./bin/sync.rb).
-
-### Installer
-
-The native host provides a `--install` flag that detects installed browsers and places the correct native messaging manifest for each one. Manifest format and location differ by browser and OS:
-
-* **Firefox** uses `allowed_extensions` in the manifest JSON
-* **Chrome/Chromium/Edge/Brave** use `allowed_origins` in the manifest JSON
-* **Linux/macOS**: manifest JSON files placed in browser-specific directories
-* **Windows**: manifest JSON files registered via the Windows Registry
-
-The native host should have packaged installers for Windows (MSI), MacOS (PKG), and Linux (DEB, RPM). Do this last.
+The daemon has packaged installers for Windows (MSI), macOS (PKG), and Linux (DEB, RPM).
 
 
 ## Testing

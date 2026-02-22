@@ -1,4 +1,4 @@
-use savebutton_nativehost::parse_server_file_listing;
+use savebutton_daemon::parse_server_file_listing;
 
 #[test]
 fn test_parse_server_file_listing_preserves_url_encoding() {

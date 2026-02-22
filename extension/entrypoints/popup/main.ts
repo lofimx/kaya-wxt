@@ -74,9 +74,10 @@ async function checkConfigured(): Promise<boolean> {
     const result = await browser.storage.local.get([
       "server",
       "email",
+      "password",
       "configured",
     ]);
-    return result.configured === true && !!result.email;
+    return result.configured === true && !!result.email && !!result.password;
   } catch (error) {
     console.error("Failed to check config:", error);
     return false;
@@ -104,26 +105,26 @@ async function saveSetup() {
   setupSaveBtn.disabled = true;
 
   try {
-    await browser.storage.local.set({ server, email, configured: true });
-
-    const configMessage = {
-      message: "config",
-      server: server,
-      email: email,
-      password: password,
-    };
-
-    const response: any = await browser.runtime.sendMessage({
-      action: "sendConfig",
-      data: configMessage,
+    // Test connection first
+    const testResponse: any = await browser.runtime.sendMessage({
+      action: "testConnection",
+      data: { server, email, password, configured: true },
     });
 
-    if (response && response.error) {
-      showSetupError("Error: " + response.error);
+    if (testResponse && testResponse.error) {
+      showSetupError("Connection failed: " + testResponse.error);
       setupSaveBtn.textContent = "Save & Continue";
       setupSaveBtn.disabled = false;
       return;
     }
+
+    // Save config
+    await browser.storage.local.set({
+      server,
+      email,
+      password,
+      configured: true,
+    });
 
     // Setup complete, now save the bookmark
     setupView.classList.add("hidden");
@@ -157,16 +158,10 @@ async function saveBookmark() {
 
     const urlFileContent = `[InternetShortcut]\nURL=${tab.url}\n`;
 
-    const message = {
-      message: "anga",
-      filename: currentFilename,
-      type: "text",
-      text: urlFileContent,
-    };
-
     const response: any = await browser.runtime.sendMessage({
-      action: "sendToNative",
-      data: message,
+      action: "saveBookmark",
+      filename: currentFilename,
+      content: urlFileContent,
     });
 
     if (response && response.error) {
@@ -190,17 +185,11 @@ async function saveNote(noteText: string) {
   const metaFilename = `${currentTimestamp}-note.toml`;
   const metaContent = `[anga]\nfilename = "${currentFilename}"\n\n[meta]\nnote = '''${noteText}'''`;
 
-  const message = {
-    message: "meta",
-    filename: metaFilename,
-    type: "text",
-    text: metaContent,
-  };
-
   try {
     const response: any = await browser.runtime.sendMessage({
-      action: "sendToNative",
-      data: message,
+      action: "saveMeta",
+      filename: metaFilename,
+      content: metaContent,
     });
 
     if (response && response.error) {

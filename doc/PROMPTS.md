@@ -39,3 +39,14 @@ When a bookmark is saved, a server sync should occur immediately after the bookm
 ### Automation: CI/CD
 
 The `kaya-firefox` repo currently has a `.github/workflows/sign-extension.yml` GitHub Actions workflow that does some of the above work. All packages for all 6 distribution targets (Windows, MacOS, RPM, DEB, AUR, `./install.sh`) should be built automatically by GitHub Actions. Any signing, notarizing, etc. should also happen in the GitHub Actions workflow(s).
+
+## Refactor: OPFS storage and optional daemon
+
+Native messaging between the browser extension and the Rust native host proved fundamentally fragile (Chrome's `--user-data-dir` breaks manifest lookup, MV3 service worker suspension closes the pipe within milliseconds).
+
+Refactored the architecture so the extension is self-sufficient:
+- **OPFS** stores anga/meta files locally in the browser's sandboxed filesystem
+- **Direct HTTP sync** from extension to Save Button Server via `fetch()`
+- **Optional daemon** on `localhost:21420` mirrors files to `~/.kaya/` for users who want disk access
+- Rename `nativehost/` to `daemon/`, remove native messaging dependencies
+- See `doc/plan/2026-02-22-r-opfs-storage-and-optional-daemon.md` and `doc/arch/adr-0004-opfs-storage.md`

@@ -1,12 +1,11 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Installs the Save Button native host on Windows.
+    Installs the Save Button daemon on Windows.
 
 .DESCRIPTION
-    This script builds and installs the Save Button native messaging host
-    for all supported browsers. It installs the binary to Program Files and
-    uses the --install flag to register native messaging manifests.
+    This script builds and installs the Save Button daemon.
+    It installs the binary to Program Files and creates the data directories.
 
 .NOTES
     Requires Administrator privileges.
@@ -15,11 +14,11 @@
 
 $ErrorActionPreference = "Stop"
 
-$BinaryName = "savebutton-nativehost.exe"
+$BinaryName = "savebutton-daemon.exe"
 $InstallDir = "$env:ProgramFiles\Save Button"
 $KayaDataDir = "$env:USERPROFILE\.kaya"
 
-Write-Host "Building Save Button native host..." -ForegroundColor Cyan
+Write-Host "Building Save Button daemon..." -ForegroundColor Cyan
 Push-Location $PSScriptRoot
 try {
     cargo build --release
@@ -50,15 +49,13 @@ if (-not (Test-Path $MetaDir)) {
     New-Item -ItemType Directory -Path $MetaDir -Force | Out-Null
 }
 
-Write-Host "Installing native messaging manifests for all browsers..." -ForegroundColor Cyan
-& $BinaryDest --install
-
 Write-Host ""
 Write-Host "Installation complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Binary installed to: $BinaryDest" -ForegroundColor White
 Write-Host "Data directory: $KayaDataDir" -ForegroundColor White
 Write-Host ""
-Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "1. Install the browser extension from your browser's extension store"
-Write-Host "2. Configure the extension with your Save Button server credentials"
+Write-Host "To start the daemon:" -ForegroundColor Yellow
+Write-Host "  & '$BinaryDest'"
+Write-Host ""
+Write-Host "The daemon listens on localhost:21420 and writes files to $KayaDataDir"

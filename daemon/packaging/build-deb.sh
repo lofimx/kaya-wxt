@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
-# Build a .deb package for the Save Button native host.
+# Build a .deb package for the Save Button daemon.
 #
 # Usage: ./build-deb.sh <binary-path>
-#   binary-path: path to the compiled savebutton-nativehost binary
+#   binary-path: path to the compiled savebutton-daemon binary
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION="1.0.0"
-PACKAGE_NAME="savebutton-nativehost"
+PACKAGE_NAME="savebutton-daemon"
 ARCH="amd64"
 
 BINARY_PATH="${1:?Usage: $0 <binary-path>}"
@@ -28,8 +28,8 @@ mkdir -p "$PKG_ROOT/etc/skel/.kaya/anga"
 mkdir -p "$PKG_ROOT/etc/skel/.kaya/meta"
 
 # Copy binary
-cp "$BINARY_PATH" "$PKG_ROOT/usr/lib/savebutton/savebutton-nativehost"
-chmod 755 "$PKG_ROOT/usr/lib/savebutton/savebutton-nativehost"
+cp "$BINARY_PATH" "$PKG_ROOT/usr/lib/savebutton/savebutton-daemon"
+chmod 755 "$PKG_ROOT/usr/lib/savebutton/savebutton-daemon"
 
 # Create control file
 cat > "$PKG_ROOT/DEBIAN/control" << EOF
@@ -37,22 +37,19 @@ Package: ${PACKAGE_NAME}
 Version: ${VERSION}
 Architecture: ${ARCH}
 Maintainer: lofi.mx
-Description: Save Button Native Host
- Native messaging host for the Save Button browser extension.
- Saves bookmarks, quotes, and images locally and syncs them
- with the Save Button server.
+Description: Save Button Daemon
+ Optional local daemon for the Save Button browser extension.
+ Mirrors saved bookmarks, quotes, and images to ~/.kaya/ on disk
+ and syncs them with the Save Button server.
 Section: web
 Priority: optional
 Homepage: https://savebutton.com
 EOF
 
-# Create postinst script — uses --install to place manifests for all browsers
+# Create postinst script
 cat > "$PKG_ROOT/DEBIAN/postinst" << 'POSTINST'
 #!/bin/bash
 set -e
-
-# Install native messaging manifests for all supported browsers
-/usr/lib/savebutton/savebutton-nativehost --install || true
 
 # Create data directories for the current user if running interactively
 if [ -n "$SUDO_USER" ]; then

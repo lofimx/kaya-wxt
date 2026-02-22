@@ -1,89 +1,18 @@
 import { browser } from "wxt/browser";
 import { generateTimestamp } from "@/utils/timestamp";
+import { writeFile, readAllBookmarkUrls } from "@/utils/opfs";
+import { loadConfig } from "@/utils/config";
+import { syncWithServer, testConnection } from "@/utils/sync";
+import { pushFileToDaemon } from "@/utils/daemon";
 
-const NATIVE_HOST_NAME = "org.savebutton.nativehost";
-
-let nativePort: ReturnType<typeof browser.runtime.connectNative> | null = null;
 let knownBookmarkedUrls = new Set<string>();
-let pendingResponses = new Map<
-  number,
-  { resolve: (value: any) => void; reject: (reason: any) => void }
->();
-let messageId = 0;
 
-function connectToNativeHost() {
-  if (nativePort) {
-    return nativePort;
-  }
-
+async function refreshBookmarkUrls() {
   try {
-    nativePort = browser.runtime.connectNative(NATIVE_HOST_NAME);
-
-    nativePort.onMessage.addListener((message: any) => {
-      console.log("Received from native host:", message);
-
-      if (message.id && pendingResponses.has(message.id)) {
-        const { resolve, reject } = pendingResponses.get(message.id)!;
-        pendingResponses.delete(message.id);
-
-        if (message.error) {
-          reject(new Error(message.error));
-        } else {
-          resolve(message);
-        }
-      }
-
-      if (message.type === "bookmarks") {
-        knownBookmarkedUrls = new Set(message.urls || []);
-        updateIconForActiveTab();
-      }
-    });
-
-    nativePort.onDisconnect.addListener(() => {
-      const lastError = browser.runtime.lastError;
-      console.error(
-        "Native host disconnected:",
-        lastError?.message || "no error details",
-      );
-      nativePort = null;
-
-      for (const [_id, { reject }] of pendingResponses) {
-        reject(new Error("Native host disconnected"));
-      }
-      pendingResponses.clear();
-    });
-
-    return nativePort;
+    knownBookmarkedUrls = await readAllBookmarkUrls();
   } catch (error) {
-    console.error("Failed to connect to native host:", error);
-    nativePort = null;
-    throw error;
+    console.error("Failed to refresh bookmark URLs:", error);
   }
-}
-
-async function sendToNativeHost(message: Record<string, any>) {
-  const port = connectToNativeHost();
-
-  return new Promise((resolve, reject) => {
-    const id = ++messageId;
-    message.id = id;
-
-    pendingResponses.set(id, { resolve, reject });
-
-    setTimeout(() => {
-      if (pendingResponses.has(id)) {
-        pendingResponses.delete(id);
-        reject(new Error("Request timed out"));
-      }
-    }, 30000);
-
-    try {
-      port.postMessage(message);
-    } catch (error) {
-      pendingResponses.delete(id);
-      reject(error);
-    }
-  });
 }
 
 async function updateIconForActiveTab() {
@@ -120,20 +49,52 @@ async function updateIconForActiveTab() {
   }
 }
 
+async function triggerSync() {
+  try {
+    const config = await loadConfig();
+    if (!config.configured || !config.email || !config.password) return;
+    const result = await syncWithServer(config);
+    const total =
+      result.anga.downloaded +
+      result.anga.uploaded +
+      result.meta.downloaded +
+      result.meta.uploaded;
+    if (total > 0) {
+      console.log(
+        `Sync: ${result.anga.downloaded + result.meta.downloaded} downloaded, ${result.anga.uploaded + result.meta.uploaded} uploaded`,
+      );
+      await refreshBookmarkUrls();
+      await updateIconForActiveTab();
+    }
+  } catch (error) {
+    console.error("Sync error:", error);
+  }
+}
+
+async function saveAnga(
+  filename: string,
+  content: string | ArrayBuffer,
+): Promise<void> {
+  await writeFile("anga", filename, content);
+  pushFileToDaemon("anga", filename, content);
+  await refreshBookmarkUrls();
+  await updateIconForActiveTab();
+  triggerSync();
+}
+
+async function saveMeta(filename: string, content: string): Promise<void> {
+  await writeFile("meta", filename, content);
+  pushFileToDaemon("meta", filename, content);
+  triggerSync();
+}
+
 async function saveImage(imageUrl: string, timestamp: string) {
   const response = await fetch(imageUrl);
   if (!response.ok) {
     throw new Error("Failed to fetch image");
   }
 
-  const blob = await response.blob();
-  const arrayBuffer = await blob.arrayBuffer();
-  const bytes = new Uint8Array(arrayBuffer);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const base64 = btoa(binary);
+  const arrayBuffer = await response.arrayBuffer();
 
   let filename: string;
   try {
@@ -141,18 +102,12 @@ async function saveImage(imageUrl: string, timestamp: string) {
     const originalFilename = urlObj.pathname.split("/").pop() || "image";
     filename = `${timestamp}-${originalFilename}`;
   } catch {
-    const ext = blob.type.split("/")[1] || "png";
+    const contentType = response.headers.get("content-type") || "image/png";
+    const ext = contentType.split("/")[1] || "png";
     filename = `${timestamp}-image.${ext}`;
   }
 
-  const message = {
-    message: "anga",
-    filename: filename,
-    type: "base64",
-    base64: base64,
-  };
-
-  await sendToNativeHost(message);
+  await saveAnga(filename, arrayBuffer);
   showNotification("Image added to Save Button");
 }
 
@@ -168,6 +123,8 @@ function showNotification(message: string) {
 }
 
 export default defineBackground(() => {
+  refreshBookmarkUrls();
+
   browser.tabs.onActivated.addListener(() => {
     updateIconForActiveTab();
   });
@@ -175,6 +132,14 @@ export default defineBackground(() => {
   browser.tabs.onUpdated.addListener((_tabId, changeInfo) => {
     if (changeInfo.url || changeInfo.status === "complete") {
       updateIconForActiveTab();
+    }
+  });
+
+  // Set up periodic sync via alarms (MV3-safe, minimum 1 minute)
+  browser.alarms.create("sync", { periodInMinutes: 1 });
+  browser.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === "sync") {
+      triggerSync();
     }
   });
 
@@ -196,14 +161,7 @@ export default defineBackground(() => {
     try {
       if (info.menuItemId === "save-to-kaya-text" && info.selectionText) {
         const filename = `${timestamp}-quote.md`;
-        const message = {
-          message: "anga",
-          filename: filename,
-          type: "text",
-          text: info.selectionText,
-        };
-
-        await sendToNativeHost(message);
+        await saveAnga(filename, info.selectionText);
         showNotification("Text added to Save Button");
       } else if (info.menuItemId === "save-to-kaya-image" && info.srcUrl) {
         await saveImage(info.srcUrl, timestamp);
@@ -216,42 +174,34 @@ export default defineBackground(() => {
 
   browser.runtime.onMessage.addListener(
     (request: any, _sender, sendResponse) => {
-      if (request.action === "sendToNative") {
-        sendToNativeHost(request.data)
-          .then((response) => {
-            updateIconForActiveTab();
-            sendResponse(response);
-          })
-          .catch((error: any) => {
-            sendResponse({ error: error.message });
-          });
+      if (request.action === "saveBookmark") {
+        saveAnga(request.filename, request.content)
+          .then(() => sendResponse({ success: true }))
+          .catch((error: any) => sendResponse({ error: error.message }));
         return true;
       }
 
-      if (request.action === "sendConfig") {
-        sendToNativeHost(request.data)
-          .then((response) => sendResponse(response))
+      if (request.action === "saveMeta") {
+        saveMeta(request.filename, request.content)
+          .then(() => sendResponse({ success: true }))
           .catch((error: any) => sendResponse({ error: error.message }));
         return true;
       }
 
       if (request.action === "testConnection") {
-        sendToNativeHost(request.data)
-          .then((response) => sendResponse(response))
+        const config = request.data;
+        testConnection(config)
+          .then(() => sendResponse({ success: true }))
           .catch((error: any) => sendResponse({ error: error.message }));
         return true;
       }
 
-      if (request.action === "checkConfigStatus") {
-        sendToNativeHost({ message: "config_status" })
-          .then((response) => sendResponse(response))
+      if (request.action === "triggerSync") {
+        triggerSync()
+          .then(() => sendResponse({ success: true }))
           .catch((error: any) => sendResponse({ error: error.message }));
         return true;
       }
     },
   );
-
-  // Don't connect eagerly at startup — connect lazily on first use.
-  // In MV3, eager connection can be terminated by Chrome before any
-  // message is exchanged if the service worker goes idle.
 });

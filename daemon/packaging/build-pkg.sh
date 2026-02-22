@@ -1,15 +1,15 @@
 #!/bin/bash
 set -e
 
-# Build a .pkg installer for the Save Button native host (macOS).
+# Build a .pkg installer for the Save Button daemon (macOS).
 #
 # Usage: ./build-pkg.sh <binary-path>
-#   binary-path: path to the compiled savebutton-nativehost binary (universal)
+#   binary-path: path to the compiled savebutton-daemon binary (universal)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VERSION="1.0.0"
-PACKAGE_NAME="savebutton-nativehost"
-IDENTIFIER="com.savebutton.nativehost"
+PACKAGE_NAME="savebutton-daemon"
+IDENTIFIER="com.savebutton.daemon"
 
 BINARY_PATH="${1:?Usage: $0 <binary-path>}"
 
@@ -26,16 +26,13 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$PKG_ROOT/usr/local/bin"
 
 # Copy binary
-cp "$BINARY_PATH" "$PKG_ROOT/usr/local/bin/savebutton-nativehost"
-chmod 755 "$PKG_ROOT/usr/local/bin/savebutton-nativehost"
+cp "$BINARY_PATH" "$PKG_ROOT/usr/local/bin/savebutton-daemon"
+chmod 755 "$PKG_ROOT/usr/local/bin/savebutton-daemon"
 
-# Create postinstall script — uses --install to place manifests for all browsers
+# Create postinstall script
 mkdir -p "$SCRIPTS_DIR"
 cat > "$SCRIPTS_DIR/postinstall" << 'POSTINSTALL'
 #!/bin/bash
-
-# Install native messaging manifests for all supported browsers
-/usr/local/bin/savebutton-nativehost --install || true
 
 # Determine the real user (not root)
 REAL_USER="${SUDO_USER:-$USER}"

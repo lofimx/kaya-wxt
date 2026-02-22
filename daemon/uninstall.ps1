@@ -1,11 +1,11 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Uninstalls the Save Button native host from Windows.
+    Uninstalls the Save Button daemon from Windows.
 
 .DESCRIPTION
-    This script removes the Save Button native messaging host binary and
-    manifests/registry entries for all browsers. It does NOT remove user data in ~/.kaya.
+    This script removes the Save Button daemon binary.
+    It does NOT remove user data in ~/.kaya.
 
 .NOTES
     Requires Administrator privileges.
@@ -13,22 +13,9 @@
 
 $ErrorActionPreference = "Stop"
 
-$BinaryName = "savebutton-nativehost.exe"
 $InstallDir = "$env:ProgramFiles\Save Button"
-$BinaryPath = Join-Path $InstallDir $BinaryName
 
-Write-Host "Uninstalling Save Button native host..." -ForegroundColor Cyan
-
-# Remove native messaging manifests via --uninstall
-if (Test-Path $BinaryPath) {
-    Write-Host "Removing native messaging manifests..." -ForegroundColor Cyan
-    try {
-        & $BinaryPath --uninstall
-        Write-Host "  Native messaging manifests removed" -ForegroundColor Gray
-    } catch {
-        Write-Host "  Warning: could not remove manifests: $_" -ForegroundColor Yellow
-    }
-}
+Write-Host "Uninstalling Save Button daemon..." -ForegroundColor Cyan
 
 # Remove installation directory
 Write-Host "Removing installation directory..." -ForegroundColor Cyan

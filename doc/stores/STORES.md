@@ -18,7 +18,7 @@ Save Button is published to three browser extension stores. This document covers
    - Uploads the Chrome zip to the Chrome Web Store
    - Uploads the Edge zip to Edge Add-ons
    - Uploads the Firefox zip to AMO
-   - Creates a GitHub Release with all artifacts (extension zips, native host binaries, Linux packages)
+   - Creates a GitHub Release with all artifacts (extension zips, daemon binaries, Linux packages)
 4. Each store performs its own review before publishing the update.
 
 ## Build Artifacts
@@ -131,7 +131,6 @@ Both Chrome and Edge require a manual first submission. Firefox has already been
 6. Privacy tab: privacy policy URL, permissions justification (see `listing.md`)
 7. Submit for review
 8. Note the **extension ID** and add it as the `CHROME_EXTENSION_ID` secret
-9. Update `nativehost/src/main.rs` `CHROME_ORIGIN_PLACEHOLDER` with the real ID
 
 ### Edge Add-ons -- First Submission
 
@@ -142,7 +141,6 @@ Both Chrome and Edge require a manual first submission. Firefox has already been
 5. Submit for review
 6. Note the **product ID** and add it as the `EDGE_PRODUCT_ID` secret
 7. Generate API credentials (Partner Center > Publish API) and add as secrets
-8. Update `nativehost/src/main.rs` with the Edge extension origin
 
 ---
 

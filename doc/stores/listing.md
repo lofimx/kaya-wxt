@@ -14,7 +14,7 @@ Save bookmarks, quotes, and images with Save Button
 
 Save Button is a cross-browser bookmarking extension that saves your bookmarks, text quotes, and images locally and syncs them to your own server.
 
-Click the toolbar button to bookmark any page. Right-click text or images to save them. Everything is stored as plain files in ~/.kaya/ on your computer and synced to your Save Button server over a simple HTTP API.
+Click the toolbar button to bookmark any page. Right-click text or images to save them. Everything is stored locally in the browser and synced to your Save Button server over a simple HTTP API.
 
 Features:
 - One-click bookmarking from the toolbar
@@ -25,7 +25,7 @@ Features:
 - All data stored as plain files (bookmarks as .url, quotes as .md, metadata as .toml)
 - No third-party analytics or tracking
 
-Save Button requires a native host (savebutton-nativehost) to be installed separately for file storage and sync. Visit https://savebutton.com for setup instructions.
+An optional local daemon is available for users who want files mirrored to disk at ~/.kaya/. Visit https://savebutton.com for details.
 
 ## Category
 
@@ -41,12 +41,12 @@ https://savebutton.com/privacy
 
 ## Privacy Policy Summary
 
-Save Button does not collect, transmit, or store any user data on third-party servers. All bookmarks, quotes, and images are stored locally on the user's computer in ~/.kaya/. If the user configures a Save Button server, data is synced only to that server using the credentials the user provides. No analytics, telemetry, or tracking of any kind is included in the extension or native host.
+Save Button does not collect, transmit, or store any user data on third-party servers. All bookmarks, quotes, and images are stored locally in the browser's sandboxed storage. If the user configures a Save Button server, data is synced only to that server using the credentials the user provides. No analytics, telemetry, or tracking of any kind is included in the extension.
 
 ## Permissions Justification
 
-- **nativeMessaging**: Communicates with a local native host (savebutton-nativehost) for file storage and server sync. No data leaves the user's machine except to their own configured server.
 - **activeTab / tabs**: Reads the current tab URL and title to create bookmarks.
 - **contextMenus**: Adds "Save to Kaya" options for saving selected text and images.
-- **storage**: Stores extension preferences (server URL, email) in browser local storage.
+- **storage**: Stores extension preferences (server URL, email, password) in browser local storage.
 - **notifications**: Displays error notifications to the user.
+- **alarms**: Schedules periodic sync with the Save Button server (every 1 minute).

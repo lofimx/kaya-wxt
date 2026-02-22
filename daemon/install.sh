@@ -2,9 +2,9 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BINARY_NAME="savebutton-nativehost"
+BINARY_NAME="savebutton-daemon"
 
-echo "Building Save Button native host..."
+echo "Building Save Button daemon..."
 cd "$SCRIPT_DIR"
 cargo build --release
 
@@ -17,14 +17,12 @@ echo "Creating ~/.kaya directories..."
 mkdir -p "$HOME/.kaya/anga"
 mkdir -p "$HOME/.kaya/meta"
 
-echo "Installing native messaging manifests for all browsers..."
-"$INSTALL_DIR/$BINARY_NAME" --install
-
 echo ""
 echo "Installation complete!"
 echo ""
 echo "Binary installed to: $INSTALL_DIR/$BINARY_NAME"
 echo ""
-echo "Next steps:"
-echo "1. Install the browser extension from your browser's extension store"
-echo "2. Configure the extension with your Save Button server credentials"
+echo "To start the daemon:"
+echo "  $BINARY_NAME"
+echo ""
+echo "The daemon listens on localhost:21420 and writes files to ~/.kaya/"

@@ -1,17 +1,11 @@
 #!/bin/bash
 set -e
 
-BINARY_NAME="savebutton-nativehost"
+BINARY_NAME="savebutton-daemon"
 INSTALL_DIR="/usr/local/bin"
 BINARY_PATH="$INSTALL_DIR/$BINARY_NAME"
 
-echo "Uninstalling Save Button native host..."
-
-# Remove native messaging manifests for all browsers
-if [ -f "$BINARY_PATH" ]; then
-    "$BINARY_PATH" --uninstall || true
-    echo "  Removed native messaging manifests"
-fi
+echo "Uninstalling Save Button daemon..."
 
 # Remove binary
 if [ -f "$BINARY_PATH" ]; then

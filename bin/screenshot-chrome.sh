@@ -45,52 +45,10 @@ else
   echo "  Found: $CHROME_FOR_TESTING"
 fi
 
-# --- Build and install native host ---
-
-echo ""
-echo "Step 2: Building native host..."
-cd "$PROJECT_ROOT/nativehost"
-cargo build --release 2>&1 | tail -1
-
-BINARY="$PROJECT_ROOT/nativehost/target/release/savebutton-nativehost"
-if [ ! -f "$BINARY" ]; then
-  echo "Error: Build failed — binary not found at $BINARY"
-  exit 1
-fi
-
-echo ""
-echo "Step 3: Installing native host binary and manifests..."
-echo "  (requires sudo to copy binary and install system-wide manifest)"
-sudo cp "$BINARY" /usr/local/bin/savebutton-nativehost
-sudo chmod +x /usr/local/bin/savebutton-nativehost
-savebutton-nativehost --install
-
-# --- Install system-wide manifest for dev mode ---
-# WXT's dev mode launches Chrome with --user-data-dir pointing to a temp
-# directory. Chrome only looks for per-user native messaging manifests inside
-# that temp dir (where none exist). The system-wide location is always checked
-# regardless of --user-data-dir, so we install there for dev mode to work.
-
-echo ""
-echo "Step 4: Installing system-wide native messaging manifest..."
-CHROME_MANIFEST="$HOME/.config/google-chrome/NativeMessagingHosts/org.savebutton.nativehost.json"
-SYSTEM_NM_DIR="/etc/opt/chrome/native-messaging-hosts"
-if [ -f "$CHROME_MANIFEST" ]; then
-  sudo mkdir -p "$SYSTEM_NM_DIR"
-  sudo cp "$CHROME_MANIFEST" "$SYSTEM_NM_DIR/org.savebutton.nativehost.json"
-  echo "  Installed to $SYSTEM_NM_DIR/org.savebutton.nativehost.json"
-  echo "  Contents:"
-  cat "$SYSTEM_NM_DIR/org.savebutton.nativehost.json" | sed 's/^/    /'
-else
-  echo "  Error: Chrome manifest not found at $CHROME_MANIFEST"
-  echo "  Run 'savebutton-nativehost --install' first."
-  exit 1
-fi
-
 # --- Launch Chrome for Testing with WXT ---
 
 echo ""
-echo "Step 5: Launching Chrome with the extension..."
+echo "Step 2: Launching Chrome with the extension..."
 echo ""
 echo "  The browser will open. To take a screenshot:"
 echo ""

@@ -2,9 +2,36 @@
 
 Kaya browser extensions
 
+## Architecture
+
+The browser extension is self-sufficient: it stores files locally using OPFS (Origin Private File System) and syncs them directly with the Save Button Server over HTTP. An optional local daemon can mirror files to `~/.kaya/` on disk.
+
+Read the [Architecture Decision Records](doc/arch/) for full details.
+
 ## Prerequisites
 
-* Native (non-Flatpak) Chrome: https://linuxcapable.com/how-to-install-google-chrome-on-debian-linux/
+* Node.js 24 (managed via [mise](https://mise.jdx.dev/))
+* PNPM
+
+## Development
+
+```bash
+cd extension
+pnpm install
+pnpm dev:chrome    # Chrome with hot reload
+pnpm dev:firefox   # Firefox with hot reload
+```
+
+### Optional Daemon
+
+The daemon is not required for development or normal use. To run it:
+
+```bash
+cd daemon
+cargo build --release
+./target/release/savebutton-daemon
+# Listens on localhost:21420
+```
 
 ## Release
 
@@ -20,14 +47,13 @@ For detailed store setup, secrets configuration, and first-time submission instr
 
 ## Open Questions
 
-* Switch to OPFS + Webworker in extension? https://youtu.be/rlFJ6AuJX9U?si=XuN31aTyQaeD2HGh&t=419
 * Ladybird and Servo Browser support in the future?
-* **Flatpak browsers**: Flatpak-sandboxed browsers (increasingly common on Linux) cannot use native messaging because the sandbox prevents spawning host executables. There is an [xdg-desktop-portal NativeMessaging proposal](https://github.com/flatpak/xdg-desktop-portal/issues/655) in progress but it hasn't landed yet. Until it does, Save Button requires a native (non-Flatpak) browser install. If the portal never ships, alternatives include communicating over a local socket (requires running a daemon) or using the browser download API as a file-drop fallback.
 
 ## TODO
 
-* [ ] Pin a key for Chrome Extension ID (after first Chrome Web Store publish, update `CHROME_EXTENSION_ORIGIN` in `nativehost/src/main.rs`)
-* [ ] Pin a key for Edge Extension ID (after first Edge Add-ons publish, same as above for Edge)
+* [ ] First submission to Chrome Web Store (update Chrome Extension ID after publish)
+* [ ] First submission to Edge Add-ons (update Edge Extension ID after publish)
+* [ ] Configure GitHub repository secrets for automated store publishing
 
 ## Temp: Saving Screenshots and First Store Submissions
 
@@ -40,7 +66,7 @@ For detailed store setup, secrets configuration, and first-time submission instr
 
 ---
 
-**Then, Chrome Web Store submission** (Phase 2 of the plan):
+**Then, Chrome Web Store submission**:
 
 1. Build the zip: `cd extension && pnpm zip:chrome`
 2. Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
@@ -48,8 +74,4 @@ For detailed store setup, secrets configuration, and first-time submission instr
 4. Fill in the listing using the text from `doc/stores/listing.md`, the screenshot(s), and `doc/stores/store-icon-128.png`
 5. Fill in Privacy tab with the privacy policy URL and permissions justifications from `listing.md`
 6. Submit for review
-7. Tell me the **Chrome Extension ID** (32-char string from the dashboard URL)
-
-Also, before or after submission, set up the **Google Cloud OAuth credentials** (Phase 2b in the plan) so we have them ready for GitHub secrets.
-
-Once you have the Chrome extension ID and OAuth credentials, I can update the code. We can do the Edge submission in parallel or after Chrome -- your call.
+7. Note the **Chrome Extension ID** (32-char string from the dashboard URL)
