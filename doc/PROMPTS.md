@@ -134,3 +134,23 @@ On iOS, there does not seem to be an "Add to Save Button" option in the context 
 Read [@PLAN.md](file:///Users/steven/work/lofi/kaya-wxt/doc/plan/PLAN.md) carefully.
 
 It will be important to keep all the WXT browser extension versions in sync. Update [@release.rb](file:///Users/steven/work/lofi/kaya-wxt/bin/release.rb) to ensure that it's replacing version numbers across the entire repository so that new releases automatically see minor version bumps when they happen. There are no git tags at the moment, so print the commands for me to manually run to tag the current SHA as 'v0.2.0' once the `release.rb` script is updated.
+
+### BUG: The GitHub Actions Workflow for Release is broken
+
+After pushing tag 'v0.2.0', these errors and warnings occurred on run https://github.com/loficc/kaya-wxt/actions/runs/22287984560 -
+
+**Errors:**
+
+* Unable to resolve action `mnao305/chrome-extension-upload@v5`, unable to find version `v5`
+* Unable to download artifact(s): Artifact not found for name: extension-edge
+  Please ensure that your artifact is not expired and the artifact was uploaded using a compatible version of toolkit/upload-artifact.
+  For more information, visit the GitHub Artifacts FAQ: https://github.com/actions/toolkit/blob/main/packages/artifact/docs/faq.md
+* Unable to download artifact(s): Artifact not found for name: extension-firefox
+  Please ensure that your artifact is not expired and the artifact was uploaded using a compatible version of toolkit/upload-artifact.
+  For more information, visit the GitHub Artifacts FAQ: https://github.com/actions/toolkit/blob/main/packages/artifact/docs/faq.md
+
+**Warnings:**
+
+* Build Extension (chrome) = No files were found with the provided path: extension/.output/*.zip. No artifacts will be uploaded.
+* Build Extension (firefox) =  No files were found with the provided path: extension/.output/*.zip. No artifacts will be uploaded.
+* Build Extension (edge) = No files were found with the provided path: extension/.output/*.zip. No artifacts will be uploaded.
