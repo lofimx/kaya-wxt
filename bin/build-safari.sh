@@ -58,7 +58,8 @@ if [[ "$REGEN" == true ]] || [[ ! -d "$SAFARI_DIR" ]]; then
   echo "Or apply these via sed:"
   echo "  sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 10.14/MACOSX_DEPLOYMENT_TARGET = 12.0/g' \"$SAFARI_DIR/Save Button/Save Button.xcodeproj/project.pbxproj\""
   echo "  sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 15.0/IPHONEOS_DEPLOYMENT_TARGET = 16.0/g' \"$SAFARI_DIR/Save Button/Save Button.xcodeproj/project.pbxproj\""
-  echo "  sed -i '' 's/MARKETING_VERSION = 1.0/MARKETING_VERSION = 0.2.0/g' \"$SAFARI_DIR/Save Button/Save Button.xcodeproj/project.pbxproj\""
+  VERSION=$(grep '"version"' "$EXTENSION_DIR/package.json" | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+  echo "  sed -i '' 's/MARKETING_VERSION = 1.0/MARKETING_VERSION = $VERSION/g' \"$SAFARI_DIR/Save Button/Save Button.xcodeproj/project.pbxproj\""
 fi
 
 echo ""

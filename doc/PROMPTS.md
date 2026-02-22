@@ -128,3 +128,9 @@ When I save a bookmark in Safari on iOS using the extension, I get the following
 On iOS, there does not seem to be an "Add to Save Button" option in the context menu for either text or images. Perhaps this isn't possible with an extension on iOS?
 
 **Conclusion:** `WONTFIX` - iOS does not support the `contextMenus` API: https://github.com/mdn/browser-compat-data/issues/6376
+
+## Update `release.rb` to update all version information, for each extension, simultaneously
+
+Read [@PLAN.md](file:///Users/steven/work/lofi/kaya-wxt/doc/plan/PLAN.md) carefully.
+
+It will be important to keep all the WXT browser extension versions in sync. Update [@release.rb](file:///Users/steven/work/lofi/kaya-wxt/bin/release.rb) to ensure that it's replacing version numbers across the entire repository so that new releases automatically see minor version bumps when they happen. There are no git tags at the moment, so print the commands for me to manually run to tag the current SHA as 'v0.2.0' once the `release.rb` script is updated.

@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 # Release Script
-# Bumps the patch version in extension/package.json, commits, tags, and pushes.
+# Bumps the patch version across all extension version files, commits, tags, and pushes.
 #
 # Usage:
 #   ruby bin/release.rb
@@ -10,12 +10,18 @@
 # The script:
 #   1. Finds the highest semver tag (e.g. v0.2.13)
 #   2. Bumps the patch number (e.g. 0.2.14)
-#   3. Updates "version" in extension/package.json
-#   4. Commits the change
+#   3. Updates version in:
+#      - extension/package.json
+#      - safari/Save Button/Save Button.xcodeproj/project.pbxproj (MARKETING_VERSION)
+#   4. Commits the changes
 #   5. Tags it (e.g. v0.2.14)
 #   6. Pushes the tag to origin
 
-PACKAGE_JSON_PATH = File.expand_path("../extension/package.json", __dir__)
+REPO_ROOT = File.expand_path("..", __dir__)
+PACKAGE_JSON_PATH = File.join(REPO_ROOT, "extension/package.json")
+PBXPROJ_PATH = File.join(REPO_ROOT, "safari/Save Button/Save Button.xcodeproj/project.pbxproj")
+
+VERSION_FILES = [PACKAGE_JSON_PATH, PBXPROJ_PATH].freeze
 
 def run(cmd)
   output = `#{cmd} 2>&1`.strip
@@ -52,17 +58,33 @@ def tag_string(v)
   "v#{version_string(v)}"
 end
 
-def update_package_json(new_version)
+def update_package_json(old_version, new_version)
   content = File.read(PACKAGE_JSON_PATH)
-
-  old_version = content.match(/"version":\s*"([^"]+)"/)[1]
-  updated = content.sub(/"version":\s*"[^"]+"/, "\"version\": \"#{new_version}\"")
-
-  abort "package.json was not changed — version regex may be wrong" if updated == content
-
+  updated = content.sub(/"version":\s*"#{Regexp.escape(old_version)}"/, "\"version\": \"#{new_version}\"")
+  abort "package.json was not changed — expected version #{old_version}" if updated == content
   File.write(PACKAGE_JSON_PATH, updated)
+end
 
-  old_version
+def update_pbxproj(old_version, new_version)
+  return unless File.exist?(PBXPROJ_PATH)
+
+  content = File.read(PBXPROJ_PATH)
+  updated = content.gsub("MARKETING_VERSION = #{old_version};", "MARKETING_VERSION = #{new_version};")
+  if updated == content
+    puts "  Warning: project.pbxproj unchanged (no MARKETING_VERSION = #{old_version} found)"
+    return
+  end
+
+  count = content.scan("MARKETING_VERSION = #{old_version};").length
+  File.write(PBXPROJ_PATH, updated)
+  count
+end
+
+def current_version_from_package_json
+  content = File.read(PACKAGE_JSON_PATH)
+  m = content.match(/"version":\s*"([^"]+)"/)
+  abort "Could not read version from package.json" unless m
+  m[1]
 end
 
 # --- Main ---
@@ -71,10 +93,19 @@ current = highest_tag
 new_ver = bump_patch(current)
 new_version = version_string(new_ver)
 new_tag = tag_string(new_ver)
+old_version = current_version_from_package_json
 
 puts "Current highest tag: #{current[:tag]}"
+puts "Current version in package.json: #{old_version}"
 puts "New version: #{new_version}"
 puts "New tag: #{new_tag}"
+puts
+puts "Files to update:"
+VERSION_FILES.each do |f|
+  short = f.sub("#{REPO_ROOT}/", "")
+  exists = File.exist?(f) ? "ok" : "missing (skipped)"
+  puts "  #{short} [#{exists}]"
+end
 puts
 
 print "Proceed? [y/N] "
@@ -82,17 +113,25 @@ answer = $stdin.gets.chomp
 abort "Aborted." unless answer.downcase == "y"
 puts
 
-# Check for uncommitted changes (besides package.json itself)
+# Check for uncommitted changes (besides the files we're about to modify)
 status = `git status --porcelain`.strip
-dirty_files = status.split("\n").reject { |line| line.end_with?("extension/package.json") }
+dirty_files = status.split("\n").reject do |line|
+  VERSION_FILES.any? { |f| line.end_with?(f.sub("#{REPO_ROOT}/", "")) }
+end
 unless dirty_files.empty?
   abort "Working tree has uncommitted changes:\n#{dirty_files.join("\n")}\nPlease commit or stash them first."
 end
 
-old_version = update_package_json(new_version)
+update_package_json(old_version, new_version)
 puts "Updated extension/package.json: #{old_version} -> #{new_version}"
 
-run("git add extension/package.json")
+pbx_count = update_pbxproj(old_version, new_version)
+puts "Updated project.pbxproj: #{pbx_count} MARKETING_VERSION entries" if pbx_count
+
+git_files = ["extension/package.json"]
+git_files << PBXPROJ_PATH if File.exist?(PBXPROJ_PATH)
+
+run("git add #{git_files.map { |f| %("#{f}") }.join(" ")}")
 run("git commit -m 'v#{new_version}'")
 puts "Committed."
 
