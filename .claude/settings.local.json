@@ -38,7 +38,10 @@
       "Bash(pngcheck:*)",
       "Bash(python3:*)",
       "Bash(bash bin/generate-icons.sh:*)",
-      "Bash(bash /Users/steven/work/lofi/kaya-wxt/bin/generate-icons.sh)"
+      "Bash(bash /Users/steven/work/lofi/kaya-wxt/bin/generate-icons.sh)",
+      "WebFetch(domain:rxdb.info)",
+      "WebFetch(domain:bugs.webkit.org)",
+      "WebFetch(domain:vite.dev)"
     ]
   }
 }

@@ -169,7 +169,7 @@ async function flashGreenIcon() {
   }
 }
 
-export default defineBackground(() => {
+export default defineBackground({ persistent: false, main() {
   refreshBookmarkUrls();
 
   browser.tabs.onActivated.addListener(() => {
@@ -250,4 +250,4 @@ export default defineBackground(() => {
       }
     },
   );
-});
+}});

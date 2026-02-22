@@ -111,4 +111,20 @@ Because we already have an App ID `org.savebutton.app` for the main iOS app (htt
 
 I'm testing locally: [@README.md (90:97)](file:///Users/steven/work/lofi/kaya-wxt/README.md#L90:97)  ...the Save Button icon in the toolbar is light blue, not grayscale. Is this an alpha transparency side-effect with Safari, or is the actual icon saved for Safari a light blue? It should be grayscale, as it is on other browsers.
 
-**Conclusion:** For now, we will leave this as-is. Attempting to force grayscale by way of forced RGB colorspace actually makes this problem *worse.* Consider switching to an outlined image in the future to avoid the grayscale problem altogether.
+**Conclusion:** `WONTFIX` - For now, we will leave this as-is. Attempting to force grayscale by way of forced RGB colorspace actually makes this problem *worse.* Consider switching to an outlined image in the future to avoid the grayscale problem altogether.
+
+### BUG: `persistent` manifest entry on iOS
+
+The Safari settings show an error: "Invalid `persistent` manifest entry. A non-persistent background is required on iOS and iPadOS."
+
+### BUG: `createWritable` is not a function (iOS 18.x)
+
+When I save a bookmark in Safari on iOS using the extension, I get the following error: "(await(await u(t)).getFileHandle(e,{create:!0})).createWritable is not a function. (In '(await(await u(t)).getFileHandle(e,{create:!0})).createWritable()', '(await(await u(t)).getFileHandle(e,{create:!0})).createWritable' is undefined)"
+
+**Conclusion:** `WONTFIX` - iOS 26.x introduced support for `createWritable`, which means we don't need to introduce a polyfill or a fallback option.
+
+### BUG: No context menus on iOS
+
+On iOS, there does not seem to be an "Add to Save Button" option in the context menu for either text or images. Perhaps this isn't possible with an extension on iOS?
+
+**Conclusion:** `WONTFIX` - iOS does not support the `contextMenus` API: https://github.com/mdn/browser-compat-data/issues/6376
