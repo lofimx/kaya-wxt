@@ -64,3 +64,7 @@ Adjust `doc/plan/2026-02-22-r-opfs-storage-and-optional-daemon.md` based on [@PL
 ## BUG: Failed to Fetch
 
 When I enter my credentials or use "Test Connection", I get a "Connection Failed: Failed to fetch" error.
+
+## BUG: Saving images without extensions fails
+
+I also noticed that an image (the gravatar image on deobald.ca) stores the image incorrectly when it's sync'd to savebutton.com, storing it without an extension or correct mimetype (it seems). The image mimetype doesn't seem to get picked up correctly. The actual image URL is this: https://www.gravatar.com/avatar/03e8994ec9679667eb7eabe1138e168e

@@ -97,6 +97,22 @@ async function saveMeta(filename: string, content: string): Promise<void> {
   triggerSync();
 }
 
+function extFromContentType(contentType: string): string {
+  const mime = contentType.split(";")[0].trim().toLowerCase();
+  const map: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+    "image/bmp": "bmp",
+    "image/tiff": "tiff",
+    "image/x-icon": "ico",
+    "image/avif": "avif",
+  };
+  return map[mime] || mime.split("/")[1] || "png";
+}
+
 async function saveImage(imageUrl: string, timestamp: string) {
   const response = await fetch(imageUrl);
   if (!response.ok) {
@@ -104,15 +120,21 @@ async function saveImage(imageUrl: string, timestamp: string) {
   }
 
   const arrayBuffer = await response.arrayBuffer();
+  const contentType = response.headers.get("content-type") || "image/png";
 
   let filename: string;
   try {
     const urlObj = new URL(imageUrl);
     const originalFilename = urlObj.pathname.split("/").pop() || "image";
-    filename = `${timestamp}-${originalFilename}`;
+    // If the filename from the URL has no extension, derive one from Content-Type
+    if (originalFilename.includes(".")) {
+      filename = `${timestamp}-${originalFilename}`;
+    } else {
+      const ext = extFromContentType(contentType);
+      filename = `${timestamp}-${originalFilename}.${ext}`;
+    }
   } catch {
-    const contentType = response.headers.get("content-type") || "image/png";
-    const ext = contentType.split("/")[1] || "png";
+    const ext = extFromContentType(contentType);
     filename = `${timestamp}-image.${ext}`;
   }
 
