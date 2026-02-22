@@ -16,12 +16,16 @@ use std::thread;
 use std::time::Duration;
 use thiserror::Error;
 
+mod extra_browsers;
+
 use savebutton_nativehost::parse_server_file_listing;
 
 const NATIVE_HOST_NAME: &str = "org.savebutton.nativehost";
 const NATIVE_HOST_DESCRIPTION: &str = "Save Button native messaging host";
 const FIREFOX_EXTENSION_ID: &str = "org.savebutton@savebutton.org";
-const CHROME_ORIGIN_PLACEHOLDER: &str = "chrome-extension://PLACEHOLDER/";
+// Stable dev ID derived from the static key in wxt.config.ts.
+// TODO: update after Chrome Web Store publish if the store assigns a different ID.
+const CHROME_EXTENSION_ORIGIN: &str = "chrome-extension://kpdhgjmpibjlajlhagbgmnpjifbdbjhd/";
 
 const ALL_BROWSERS: &[&str] = &[
     "chrome",
@@ -736,11 +740,13 @@ fn do_install() -> io::Result<()> {
         NATIVE_HOST_NAME,
         NATIVE_HOST_DESCRIPTION,
         &exe_path,
-        &[CHROME_ORIGIN_PLACEHOLDER.to_string()],
+        &[CHROME_EXTENSION_ORIGIN.to_string()],
         &[FIREFOX_EXTENSION_ID.to_string()],
         ALL_BROWSERS,
         Scope::User,
     )?;
+
+    extra_browsers::install_extra(NATIVE_HOST_NAME)?;
 
     println!("Native messaging manifests installed for all supported browsers.");
     Ok(())
@@ -749,6 +755,7 @@ fn do_install() -> io::Result<()> {
 fn do_uninstall() -> io::Result<()> {
     println!("Removing native messaging manifests for Save Button...");
     remove(NATIVE_HOST_NAME, ALL_BROWSERS, Scope::User)?;
+    extra_browsers::uninstall_extra(NATIVE_HOST_NAME)?;
     println!("Native messaging manifests removed.");
     Ok(())
 }

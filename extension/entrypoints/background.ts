@@ -40,7 +40,11 @@ function connectToNativeHost() {
     });
 
     nativePort.onDisconnect.addListener(() => {
-      console.error("Native host disconnected");
+      const lastError = browser.runtime.lastError;
+      console.error(
+        "Native host disconnected:",
+        lastError?.message || "no error details",
+      );
       nativePort = null;
 
       for (const [_id, { reject }] of pendingResponses) {
@@ -247,5 +251,7 @@ export default defineBackground(() => {
     },
   );
 
-  connectToNativeHost();
+  // Don't connect eagerly at startup — connect lazily on first use.
+  // In MV3, eager connection can be terminated by Chrome before any
+  // message is exchanged if the service worker goes idle.
 });

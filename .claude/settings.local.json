@@ -7,7 +7,16 @@
       "mcp__acp__Edit",
       "WebFetch(domain:docs.rs)",
       "WebFetch(domain:crates.io)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:developer.chrome.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:source.chromium.org)",
+      "WebFetch(domain:webkit.org)",
+      "WebFetch(domain:web.dev)",
+      "WebFetch(domain:aweirdimagination.net)",
+      "WebFetch(domain:groups.google.com)",
+      "WebFetch(domain:caniuse.com)",
+      "WebFetch(domain:cloudfour.com)"
     ]
   }
 }

@@ -115,9 +115,94 @@ jobs:
             nativehost/packaging/build-deb/*.deb
             nativehost/packaging/build-rpm/rpmbuild/RPMS/**/*.rpm
 
+  publish-chrome:
+    name: Publish to Chrome Web Store
+    needs: [build-extension, test-rust, test-extension]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Chrome extension
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-chrome
+          path: artifacts
+
+      - name: Publish to Chrome Web Store
+        uses: mnao305/chrome-extension-upload@v5
+        with:
+          file-path: artifacts/*.zip
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+
+  publish-edge:
+    name: Publish to Edge Add-ons
+    needs: [build-extension, test-rust, test-extension]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Edge extension
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-edge
+          path: artifacts
+
+      - name: Find zip file
+        id: find-zip
+        run: echo "zip_path=$(ls artifacts/*.zip)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to Edge Add-ons
+        uses: wdzeng/edge-addon@v2
+        with:
+          product-id: ${{ secrets.EDGE_PRODUCT_ID }}
+          zip-path: ${{ steps.find-zip.outputs.zip_path }}
+          client-id: ${{ secrets.EDGE_CLIENT_ID }}
+          api-key: ${{ secrets.EDGE_API_KEY }}
+
+  publish-firefox:
+    name: Publish to Firefox AMO
+    needs: [build-extension, test-rust, test-extension]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: extension/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: extension
+        run: pnpm install
+
+      - name: Download Firefox extension
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-firefox
+          path: artifacts
+
+      - name: Sign and publish to AMO
+        working-directory: extension
+        run: pnpm wxt submit --browser firefox
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+
   release:
     name: Create Release
-    needs: [build-extension, build-nativehost, package-linux]
+    needs:
+      [
+        build-extension,
+        build-nativehost,
+        package-linux,
+        publish-chrome,
+        publish-edge,
+        publish-firefox,
+      ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
