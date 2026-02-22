@@ -68,3 +68,7 @@ When I enter my credentials or use "Test Connection", I get a "Connection Failed
 ## BUG: Saving images without extensions fails
 
 I also noticed that an image (the gravatar image on deobald.ca) stores the image incorrectly when it's sync'd to savebutton.com, storing it without an extension or correct mimetype (it seems). The image mimetype doesn't seem to get picked up correctly. The actual image URL is this: https://www.gravatar.com/avatar/03e8994ec9679667eb7eabe1138e168e
+
+## Safari Support
+
+I think all the store submissions are completed except for Safari. Since you said the process for Safari was special, please plan out the implementation based on [@PLAN.md](file:///home/steven/work/lofi/kaya-wxt/doc/plan/PLAN.md) for building Safari support and releasing it. I have an Apple Developer Account for Kaya / Save Button.
