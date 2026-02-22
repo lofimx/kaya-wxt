@@ -16,7 +16,10 @@
       "WebFetch(domain:aweirdimagination.net)",
       "WebFetch(domain:groups.google.com)",
       "WebFetch(domain:caniuse.com)",
-      "WebFetch(domain:cloudfour.com)"
+      "WebFetch(domain:cloudfour.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:evilmartians.com)",
+      "WebFetch(domain:victorwynne.com)"
     ]
   }
 }

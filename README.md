@@ -2,6 +2,18 @@
 
 Kaya browser extensions
 
+## Browser Support
+
+* Firefox
+* Chrome
+* Edge
+* Safari (soon)
+* Orion (via Firefox or Chrome)
+* Chromium:
+  * Vivaldi
+  * Brave
+  * Arc
+
 ## Architecture
 
 The browser extension is self-sufficient: it stores files locally using OPFS (Origin Private File System) and syncs them directly with the Save Button Server over HTTP. An optional local daemon can mirror files to `~/.kaya/` on disk.
@@ -51,27 +63,6 @@ For detailed store setup, secrets configuration, and first-time submission instr
 
 ## TODO
 
-* [ ] First submission to Chrome Web Store (update Chrome Extension ID after publish)
-* [ ] First submission to Edge Add-ons (update Edge Extension ID after publish)
+* [x] First submission to Chrome Web Store (update Chrome Extension ID after publish)
+* [x] First submission to Edge Add-ons (update Edge Extension ID after publish)
 * [ ] Configure GitHub repository secrets for automated store publishing
-
-## Temp: Saving Screenshots and First Store Submissions
-
-**Screenshots first.** Before submitting to either store, you'll need at least one 1280x800 screenshot. To capture one:
-
-1. Load the extension in Chrome: `cd extension && pnpm dev:chrome`, then go to `chrome://extensions`, enable Developer mode, load unpacked from `extension/.output/chrome-mv3/`
-2. Navigate to any website, click the toolbar button
-3. Capture a 1280x800 screenshot of the browser window
-4. Save it as `doc/stores/screenshot-1-popup.png`
-
----
-
-**Then, Chrome Web Store submission**:
-
-1. Build the zip: `cd extension && pnpm zip:chrome`
-2. Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
-3. Click "New item", upload the zip from `extension/.output/`
-4. Fill in the listing using the text from `doc/stores/listing.md`, the screenshot(s), and `doc/stores/store-icon-128.png`
-5. Fill in Privacy tab with the privacy policy URL and permissions justifications from `listing.md`
-6. Submit for review
-7. Note the **Chrome Extension ID** (32-char string from the dashboard URL)

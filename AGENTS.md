@@ -43,7 +43,8 @@ The extension is built with WXT to support multiple browsers from a single codeb
 
 * **Primary targets**: Firefox, Chrome, Edge
 * **Also supported**: Chromium-based browsers (Brave, Opera, Vivaldi, Arc, etc.)
-* **Deferred**: Safari (requires separate Xcode packaging), Orion, Epiphany
+* **Deferred**: Safari (requires separate Xcode packaging), Orion
+* **Not supported**: Epiphany (no WebExtensions support)
 
 WXT defaults to MV2 for Firefox/Safari and MV3 for Chrome/Edge/others. Browser-specific code should use `import.meta.env.BROWSER` or `import.meta.env.MANIFEST_VERSION` for conditional logic.
 
