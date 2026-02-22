@@ -735,7 +735,7 @@
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (App)/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Save Button";
+				INFOPLIST_KEY_CFBundleDisplayName = "Save Button for Safari";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -755,7 +755,7 @@
 					WebKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.savebutton.safari;
-				PRODUCT_NAME = "Save Button";
+				PRODUCT_NAME = "Save Button for Safari";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -781,7 +781,7 @@
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (App)/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Save Button";
+				INFOPLIST_KEY_CFBundleDisplayName = "Save Button for Safari";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -801,7 +801,7 @@
 					WebKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.savebutton.safari;
-				PRODUCT_NAME = "Save Button";
+				PRODUCT_NAME = "Save Button for Safari";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -908,7 +908,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "macOS (App)/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Save Button";
+				INFOPLIST_KEY_CFBundleDisplayName = "Save Button for Safari";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -925,7 +925,7 @@
 					WebKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.savebutton.safari;
-				PRODUCT_NAME = "Save Button";
+				PRODUCT_NAME = "Save Button for Safari";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -952,7 +952,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "macOS (App)/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Save Button";
+				INFOPLIST_KEY_CFBundleDisplayName = "Save Button for Safari";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -969,7 +969,7 @@
 					WebKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.savebutton.safari;
-				PRODUCT_NAME = "Save Button";
+				PRODUCT_NAME = "Save Button for Safari";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
