@@ -118,6 +118,7 @@ See [doc/stores/STORES.md](doc/stores/STORES.md) for full details.
 ## Open Questions
 
 * Ladybird and Servo Browser support in the future?
+* "Unsaved" icon: should it just be an outline, instead of grayscale?
 
 ## TODO
 

@@ -106,3 +106,9 @@ Because we already have an App ID `org.savebutton.app` for the main iOS app (htt
 | Full app                | `org.savebutton.app` (unchanged) | Save Button                  |
 | Safari container app    | `org.savebutton.safari`          | Save Button for Safari       |
 | Safari extension target | `org.savebutton.safari.Extension | (internal, not user-visible) |
+
+### BUG: Safari Extension Toolbar Icon is Light Blue, not Grayscale
+
+I'm testing locally: [@README.md (90:97)](file:///Users/steven/work/lofi/kaya-wxt/README.md#L90:97)  ...the Save Button icon in the toolbar is light blue, not grayscale. Is this an alpha transparency side-effect with Safari, or is the actual icon saved for Safari a light blue? It should be grayscale, as it is on other browsers.
+
+**Conclusion:** For now, we will leave this as-is. Attempting to force grayscale by way of forced RGB colorspace actually makes this problem *worse.* Consider switching to an outlined image in the future to avoid the grayscale problem altogether.

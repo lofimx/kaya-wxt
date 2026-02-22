@@ -28,7 +28,7 @@ done
 # Generate greyscale PNGs from the colored ones
 for size in "${SIZES[@]}"; do
   echo "  icon-grey-${size}.png"
-  convert "$OUTPUT_DIR/icon-${size}.png" -colorspace Gray "$OUTPUT_DIR/icon-grey-${size}.png"
+  magick "$OUTPUT_DIR/icon-${size}.png" -colorspace Gray "$OUTPUT_DIR/icon-grey-${size}.png"
 done
 
 # Generate green (success flash) PNGs from the colored ones
