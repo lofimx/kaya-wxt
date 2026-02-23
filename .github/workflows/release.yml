@@ -32,10 +32,6 @@ jobs:
         working-directory: extension
         run: pnpm install
 
-      - name: Build extension
-        working-directory: extension
-        run: pnpm wxt build -b ${{ matrix.browser }}
-
       - name: Zip extension
         working-directory: extension
         run: pnpm wxt zip -b ${{ matrix.browser }}
@@ -45,6 +41,7 @@ jobs:
         with:
           name: extension-${{ matrix.browser }}
           path: extension/.output/*.zip
+          include-hidden-files: true
 
   build-daemon:
     name: Build Daemon (${{ matrix.target }})
@@ -127,7 +124,7 @@ jobs:
           path: artifacts
 
       - name: Publish to Chrome Web Store
-        uses: mnao305/chrome-extension-upload@v5
+        uses: mnao305/chrome-extension-upload@v5.0.0
         with:
           file-path: artifacts/*.zip
           extension-id: ${{ secrets.CHROME_EXTENSION_ID }}

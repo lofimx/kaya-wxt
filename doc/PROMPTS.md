@@ -137,7 +137,7 @@ It will be important to keep all the WXT browser extension versions in sync. Upd
 
 ### BUG: The GitHub Actions Workflow for Release is broken
 
-After pushing tag 'v0.2.0', these errors and warnings occurred on run https://github.com/loficc/kaya-wxt/actions/runs/22287984560 -
+After pushing tag 'v0.2.1' with `release.rb`, these errors and warnings occurred on run https://github.com/loficc/kaya-wxt/actions/runs/22288150666 -
 
 **Errors:**
 
@@ -154,3 +154,5 @@ After pushing tag 'v0.2.0', these errors and warnings occurred on run https://gi
 * Build Extension (chrome) = No files were found with the provided path: extension/.output/*.zip. No artifacts will be uploaded.
 * Build Extension (firefox) =  No files were found with the provided path: extension/.output/*.zip. No artifacts will be uploaded.
 * Build Extension (edge) = No files were found with the provided path: extension/.output/*.zip. No artifacts will be uploaded.
+
+Once you've diagnosed the issue, create a plan to resolve it according to [@PLAN.md](file:///Users/steven/work/lofi/kaya-wxt/doc/plan/PLAN.md).

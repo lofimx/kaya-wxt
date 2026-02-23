@@ -42,7 +42,15 @@
       "WebFetch(domain:rxdb.info)",
       "WebFetch(domain:bugs.webkit.org)",
       "WebFetch(domain:vite.dev)",
-      "Bash(ruby -c:*)"
+      "Bash(ruby -c:*)",
+      "Bash(pnpm wxt zip --help:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(pnpm wxt zip:*)",
+      "Bash(gh run view:*)",
+      "Bash(brew list:*)",
+      "Bash(gh auth login:*)"
     ]
   }
 }

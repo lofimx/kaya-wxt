@@ -18,6 +18,14 @@ Read [@PLAN.md](./doc/plan/PLAN.md) and follow those instructions for creating a
 
 ---
 
+## Tools
+
+If you need a specific tool (`brew install`, `sudo apt install`, etc.), stop and ask. I'll install it for you.
+
+When using external tools like `gh`, **NEVER WRITE TO EXTERNAL NETWORK SERVICES.** You are not permitted to touch `POST` APIs, use `git push` directly, or to perform any other mutative operation on remote computers, like GitHub. **Only use external tools for research and diagnosing bugs: READ-ONLY.**
+
+---
+
 ## Prompt History
 
 You can find a chronological list of significant past prompts in [@PROMPTS.md](./doc/PROMPTS.md). Major prompts are titled with Subheading Level Two (\#\#), sub-prompts are titled with Subheading Level Three (\#\#\#).
