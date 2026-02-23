@@ -182,12 +182,18 @@ jobs:
           name: extension-firefox
           path: artifacts
 
+      - name: Find zip file
+        id: find-zip
+        run: echo "zip_path=$(ls $GITHUB_WORKSPACE/artifacts/*.zip)" >> "$GITHUB_OUTPUT"
+
       - name: Sign and publish to AMO
         working-directory: extension
-        run: pnpm wxt submit --browser firefox
-        env:
-          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
-          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          pnpm wxt submit \
+            --firefox-zip "${{ steps.find-zip.outputs.zip_path }}" \
+            --firefox-extension-id "org.savebutton@savebutton.org" \
+            --firefox-jwt-issuer "${{ secrets.AMO_JWT_ISSUER }}" \
+            --firefox-jwt-secret "${{ secrets.AMO_JWT_SECRET }}"
 
   release:
     name: Create Release

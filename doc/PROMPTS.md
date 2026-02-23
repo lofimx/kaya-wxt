@@ -156,3 +156,13 @@ After pushing tag 'v0.2.1' with `release.rb`, these errors and warnings occurred
 * Build Extension (edge) = No files were found with the provided path: extension/.output/*.zip. No artifacts will be uploaded.
 
 Once you've diagnosed the issue, create a plan to resolve it according to [@PLAN.md](file:///Users/steven/work/lofi/kaya-wxt/doc/plan/PLAN.md).
+
+**After fixing `chrome-extension-upload@v5.0.0` and `include-hidden-files`:**
+
+There are now new errors:
+
+* Chrome Web Store: Input required and not supplied: extension-id
+* Firefox AMO: CACError: Unknown option `--browser`
+* Edge Addons: Error: Input required and not supplied: api-key
+
+See: https://github.com/loficc/kaya-wxt/actions/runs/22289032391

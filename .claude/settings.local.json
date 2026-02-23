@@ -50,7 +50,9 @@
       "Bash(pnpm wxt zip:*)",
       "Bash(gh run view:*)",
       "Bash(brew list:*)",
-      "Bash(gh auth login:*)"
+      "Bash(gh auth login:*)",
+      "Bash(pnpm wxt submit --help:*)",
+      "Bash(pnpm wxt:*)"
     ]
   }
 }
