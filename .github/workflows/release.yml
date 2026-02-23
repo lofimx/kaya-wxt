@@ -123,10 +123,14 @@ jobs:
           name: extension-chrome
           path: artifacts
 
+      - name: Find zip file
+        id: find-zip
+        run: echo "zip_path=$(ls artifacts/*-chrome.zip)" >> "$GITHUB_OUTPUT"
+
       - name: Publish to Chrome Web Store
         uses: mnao305/chrome-extension-upload@v5.0.0
         with:
-          file-path: artifacts/*.zip
+          file-path: ${{ steps.find-zip.outputs.zip_path }}
           extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
           client-id: ${{ secrets.CHROME_CLIENT_ID }}
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
@@ -145,7 +149,7 @@ jobs:
 
       - name: Find zip file
         id: find-zip
-        run: echo "zip_path=$(ls artifacts/*.zip)" >> "$GITHUB_OUTPUT"
+        run: echo "zip_path=$(ls artifacts/*-edge.zip)" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Edge Add-ons
         uses: wdzeng/edge-addon@v2
@@ -182,15 +186,18 @@ jobs:
           name: extension-firefox
           path: artifacts
 
-      - name: Find zip file
+      - name: Find zip files
         id: find-zip
-        run: echo "zip_path=$(ls $GITHUB_WORKSPACE/artifacts/*.zip)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "zip_path=$(ls artifacts/*-firefox.zip)" >> "$GITHUB_OUTPUT"
+          echo "sources_path=$(ls artifacts/*-sources.zip)" >> "$GITHUB_OUTPUT"
 
       - name: Sign and publish to AMO
         working-directory: extension
         run: |
           pnpm wxt submit \
-            --firefox-zip "${{ steps.find-zip.outputs.zip_path }}" \
+            --firefox-zip "$GITHUB_WORKSPACE/${{ steps.find-zip.outputs.zip_path }}" \
+            --firefox-sources-zip "$GITHUB_WORKSPACE/${{ steps.find-zip.outputs.sources_path }}" \
             --firefox-extension-id "org.savebutton@savebutton.org" \
             --firefox-jwt-issuer "${{ secrets.AMO_JWT_ISSUER }}" \
             --firefox-jwt-secret "${{ secrets.AMO_JWT_SECRET }}"
