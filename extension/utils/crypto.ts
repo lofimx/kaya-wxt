@@ -82,7 +82,7 @@ export async function encryptPassword(password: string): Promise<void> {
     [IV_KEY]: arrayBufferToBase64(iv),
   });
 
-  // Remove legacy password if it exists (migration)
+  // 2026-02-26 TODO: remove legacy password-handling migration block
   await browser.storage.local.remove("password");
 }
 

@@ -4,7 +4,7 @@ import { encryptPassword, decryptPassword } from "./crypto";
 export interface Config {
   server: string;
   email: string;
-  password: string; // TODO: remove me -- legacy
+  password: string; // 2026-02-26 TODO: remove legacy password-handling migration block
   configured: boolean;
 }
 
@@ -15,7 +15,7 @@ export async function loadConfig(): Promise<Config> {
     "server",
     "email",
     "configured",
-    "password", // TODO: remove me -- legacy -- checked for migration
+    "password", // 2026-02-26 TODO: remove legacy password-handling migration block
   ]);
 
   let password = "";
@@ -25,8 +25,7 @@ export async function loadConfig(): Promise<Config> {
   if (decrypted !== null) {
     password = decrypted;
   } else if (result.password) {
-    // TODO: remove legacy password block
-    // Legacy plaintext password found -- migrate it
+    // 2026-02-26 TODO: remove legacy password-handling migration block
     password = result.password as string;
     await encryptPassword(password);
   }
