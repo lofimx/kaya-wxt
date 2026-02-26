@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { generateTimestamp, urlToDomainSlug } from "@/utils/timestamp";
+import { saveConfig, isConfigured } from "@/utils/config";
 
 // Setup view elements
 const setupView = document.getElementById("setup-view")!;
@@ -71,13 +72,7 @@ function startAutoCloseTimer() {
 
 async function checkConfigured(): Promise<boolean> {
   try {
-    const result = await browser.storage.local.get([
-      "server",
-      "email",
-      "password",
-      "configured",
-    ]);
-    return result.configured === true && !!result.email && !!result.password;
+    return await isConfigured();
   } catch (error) {
     console.error("Failed to check config:", error);
     return false;
@@ -118,13 +113,8 @@ async function saveSetup() {
       return;
     }
 
-    // Save config
-    await browser.storage.local.set({
-      server,
-      email,
-      password,
-      configured: true,
-    });
+    // Save config (password is encrypted at rest)
+    await saveConfig({ server, email, password, configured: true });
 
     // Setup complete, now save the bookmark
     setupView.classList.add("hidden");

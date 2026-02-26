@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { pushConfigToDaemon } from "@/utils/daemon";
+import { loadConfig, saveConfig } from "@/utils/config";
 
 const serverInput = document.getElementById("server") as HTMLInputElement;
 const emailInput = document.getElementById("email") as HTMLInputElement;
@@ -22,20 +23,12 @@ function showStatus(message: string, type: string) {
 
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get([
-      "server",
-      "email",
-      "password",
-    ]);
-    if (result.server) {
-      serverInput.value = result.server as string;
-    } else {
-      serverInput.value = "https://savebutton.com";
+    const config = await loadConfig();
+    serverInput.value = config.server;
+    if (config.email) {
+      emailInput.value = config.email;
     }
-    if (result.email) {
-      emailInput.value = result.email as string;
-    }
-    if (result.password) {
+    if (config.password) {
       passwordInput.value = PASSWORD_SENTINEL;
       passwordChanged = false;
     }
@@ -59,30 +52,21 @@ async function saveSettings() {
   }
 
   try {
-    const settings: Record<string, string | boolean> = {
+    const configUpdate: Parameters<typeof saveConfig>[0] = {
       server,
       email,
       configured: true,
     };
 
     if (passwordChanged) {
-      settings.password = passwordInput.value;
+      configUpdate.password = passwordInput.value;
     }
 
-    await browser.storage.local.set(settings);
+    await saveConfig(configUpdate);
 
     // Push config to daemon if running (daemon is optional)
-    const stored = await browser.storage.local.get([
-      "server",
-      "email",
-      "password",
-    ]);
-    pushConfigToDaemon({
-      server: stored.server as string,
-      email: stored.email as string,
-      password: stored.password as string,
-      configured: true,
-    });
+    const config = await loadConfig();
+    pushConfigToDaemon(config);
 
     showStatus("Settings saved successfully", "success");
     passwordInput.value = PASSWORD_SENTINEL;
@@ -105,8 +89,8 @@ async function doTestConnection() {
   if (passwordChanged) {
     password = passwordInput.value;
   } else {
-    const result = await browser.storage.local.get(["password"]);
-    password = (result.password as string) || "";
+    const config = await loadConfig();
+    password = config.password;
   }
 
   if (!password) {
