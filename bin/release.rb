@@ -101,8 +101,18 @@ old_version = current_version_from_package_json
 
 puts "Current highest tag: #{current[:tag]}"
 puts "Current version in package.json: #{old_version}"
-puts "New version: #{new_version}"
-puts "New tag: #{new_tag}"
+puts
+
+print "New version [#{new_version}]: "
+override = $stdin.gets.chomp
+unless override.empty?
+  abort "Invalid version: #{override}" unless override.match?(/\A\d+\.\d+\.\d+\z/)
+  new_version = override
+  new_tag = "v#{new_version}"
+end
+
+puts "Version: #{new_version}"
+puts "Tag: #{new_tag}"
 puts
 puts "Files to update:"
 VERSION_FILES.each do |f|
