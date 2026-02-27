@@ -209,10 +209,10 @@ jobs:
         build-extension,
         build-daemon,
         package-linux,
+        build-safari,
         publish-chrome,
         publish-edge,
         publish-firefox,
-        publish-safari,
       ]
     runs-on: ubuntu-latest
     steps:
@@ -360,51 +360,9 @@ jobs:
             -authenticationKeyID "$APP_STORE_API_KEY" \
             -authenticationKeyIssuerID "$APP_STORE_API_ISSUER"
 
-      - name: Upload archive artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: safari-macOS-archive
-          path: safari/Save Button/build/export/*.pkg
-
       - name: Clean up keychain
         if: always()
         run: security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
-
-  publish-safari:
-    name: Publish to App Store Connect
-    needs: build-safari
-    runs-on: macos-latest
-    steps:
-      - name: Download Safari archive
-        uses: actions/download-artifact@v4
-        with:
-          name: safari-macOS-archive
-          path: artifacts
-
-      - name: Upload to App Store Connect
-        env:
-          APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
-          APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
-          APP_STORE_API_KEY_BASE64: ${{ secrets.APP_STORE_API_KEY_BASE64 }}
-        run: |
-          # Write the API key to a file
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo -n "$APP_STORE_API_KEY_BASE64" | base64 --decode \
-            -o ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8
-
-          PKG_PATH=$(ls artifacts/*.pkg)
-
-          xcrun notarytool submit "$PKG_PATH" \
-            --key ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8 \
-            --key-id "$APP_STORE_API_KEY" \
-            --issuer "$APP_STORE_API_ISSUER" \
-            --wait
-
-          xcrun altool --upload-app \
-            -f "$PKG_PATH" \
-            -t macos \
-            --apiKey "$APP_STORE_API_KEY" \
-            --apiIssuer "$APP_STORE_API_ISSUER"
 
   test-rust:
     name: Test Rust

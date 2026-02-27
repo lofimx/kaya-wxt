@@ -9,7 +9,7 @@ Save Button is published to four browser stores. This document covers the full r
 | Chrome Web Store | [Developer Dashboard](https://chrome.google.com/webstore/devconsole) | [mnao305/chrome-extension-upload@v5](https://github.com/mnao305/chrome-extension-upload) |
 | Edge Add-ons | [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/) | [wdzeng/edge-addon@v2](https://github.com/wdzeng/edge-addon) |
 | Firefox AMO | [AMO Developer Hub](https://addons.mozilla.org/en-US/developers/) | `wxt submit` / `web-ext sign` |
-| Safari / App Store | [App Store Connect](https://appstoreconnect.apple.com/) | `build-safari` + `publish-safari` jobs in `release.yml` |
+| Safari / App Store | [App Store Connect](https://appstoreconnect.apple.com/) | `build-safari` job in `release.yml` |
 
 ## How Releases Work
 
@@ -86,20 +86,23 @@ The automated publish jobs require these repository secrets (Settings > Secrets 
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a project, enable the **Chrome Web Store API**
-3. Configure OAuth consent screen (External, scope: `https://www.googleapis.com/auth/chromewebstore`)
-4. Create an OAuth 2.0 Client ID (Desktop app)
+3. Configure OAuth consent screen (External, scope: `https://www.googleapis.com/auth/chromewebstore`). Under Audience, set publishing status to **Production** (Testing mode tokens expire after 7 days).
+4. Create an OAuth 2.0 Client ID (Desktop app or Web application). Desktop apps support `http://localhost` redirects by default; for Web application type, add `http://localhost` as an authorized redirect URI.
 5. Generate a refresh token:
    ```
    # 1. Get auth code (open in browser):
-   https://accounts.google.com/o/oauth2/auth?response_type=code&scope=https://www.googleapis.com/auth/chromewebstore&client_id=YOUR_CLIENT_ID&redirect_uri=urn:ietf:wg:oauth:2.0:oob
+   https://accounts.google.com/o/oauth2/auth?response_type=code&scope=https://www.googleapis.com/auth/chromewebstore&client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost&access_type=offline&prompt=consent
 
-   # 2. Exchange for refresh token:
+   # 2. The browser redirects to http://localhost?code=XXXX&scope=...
+   #    The page won't load (nothing is listening). Copy the code= value from the URL bar.
+
+   # 3. Exchange for refresh token:
    curl -X POST "https://oauth2.googleapis.com/token" \
      -d "client_id=YOUR_CLIENT_ID" \
      -d "client_secret=YOUR_CLIENT_SECRET" \
      -d "code=YOUR_AUTH_CODE" \
      -d "grant_type=authorization_code" \
-     -d "redirect_uri=urn:ietf:wg:oauth:2.0:oob"
+     -d "redirect_uri=http://localhost"
    ```
 
 ### Edge Add-ons
