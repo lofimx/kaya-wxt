@@ -264,6 +264,8 @@ jobs:
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_PROVISION_PROFILE_APP_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_APP_BASE64 }}
           APPLE_PROVISION_PROFILE_EXT_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_EXT_BASE64 }}
+          APP_STORE_API_KEY_BASE64: ${{ secrets.APP_STORE_API_KEY_BASE64 }}
+          APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
         run: |
           # Create temporary keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
@@ -293,17 +295,15 @@ jobs:
           echo -n "$APPLE_PROVISION_PROFILE_EXT_BASE64" | base64 --decode \
             -o ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_Ext.provisionprofile
 
-          # Extract profile UUIDs for manual signing
-          APP_PROFILE_UUID=$(security cms -D -i \
-            ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_App.provisionprofile \
-            2>/dev/null | plutil -extract UUID raw -)
-          EXT_PROFILE_UUID=$(security cms -D -i \
-            ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_Ext.provisionprofile \
-            2>/dev/null | plutil -extract UUID raw -)
-          echo "APP_PROFILE_UUID=$APP_PROFILE_UUID" >> "$GITHUB_ENV"
-          echo "EXT_PROFILE_UUID=$EXT_PROFILE_UUID" >> "$GITHUB_ENV"
+          # Write App Store Connect API key for -allowProvisioningUpdates
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo -n "$APP_STORE_API_KEY_BASE64" | base64 --decode \
+            -o ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8
 
       - name: Archive universal binary (arm64 + x86_64)
+        env:
+          APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
+          APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
         run: |
           cd "safari/Save Button"
           xcodebuild archive \
@@ -313,16 +313,19 @@ jobs:
             -destination "generic/platform=macOS" \
             ARCHS="arm64 x86_64" \
             ONLY_ACTIVE_ARCH=NO \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="${{ secrets.APPLE_CODE_SIGN_IDENTITY }}" \
-            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}"
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8 \
+            -authenticationKeyID "$APP_STORE_API_KEY" \
+            -authenticationKeyIssuerID "$APP_STORE_API_ISSUER"
 
       - name: Export archive for App Store
         env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
+          APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
         run: |
           cd "safari/Save Button"
-          cat > ExportOptions.plist << PLIST
+          cat > ExportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -331,17 +334,6 @@ jobs:
             <string>app-store-connect</string>
             <key>destination</key>
             <string>upload</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>teamID</key>
-            <string>${APPLE_TEAM_ID}</string>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>org.savebutton.safari</key>
-              <string>${APP_PROFILE_UUID}</string>
-              <key>org.savebutton.safari.Extension</key>
-              <string>${EXT_PROFILE_UUID}</string>
-            </dict>
           </dict>
           </plist>
           PLIST
@@ -349,7 +341,11 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath build/SaveButton-macOS.xcarchive \
             -exportOptionsPlist ExportOptions.plist \
-            -exportPath build/export
+            -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8 \
+            -authenticationKeyID "$APP_STORE_API_KEY" \
+            -authenticationKeyIssuerID "$APP_STORE_API_ISSUER"
 
       - name: Upload archive artifact
         uses: actions/upload-artifact@v4
