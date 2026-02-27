@@ -658,7 +658,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "Save Button Extension (iOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0.2.9;
+				CURRENT_PROJECT_VERSION = 1.2.10;
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
@@ -670,7 +670,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.2.9;
+				MARKETING_VERSION = 1.2.10;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -693,7 +693,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "Save Button Extension (iOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0.2.9;
+				CURRENT_PROJECT_VERSION = 1.2.10;
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
@@ -705,7 +705,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.2.9;
+				MARKETING_VERSION = 1.2.10;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -731,7 +731,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Save Button (iOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0.2.9;
+				CURRENT_PROJECT_VERSION = 1.2.10;
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (App)/Info.plist";
@@ -747,7 +747,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.9;
+				MARKETING_VERSION = 1.2.10;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -777,7 +777,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Save Button (iOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0.2.9;
+				CURRENT_PROJECT_VERSION = 1.2.10;
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (App)/Info.plist";
@@ -793,7 +793,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.9;
+				MARKETING_VERSION = 1.2.10;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -822,7 +822,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "Save Button Extension (macOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0.2.9;
+				CURRENT_PROJECT_VERSION = 1.2.10;
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -837,7 +837,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 0.2.9;
+				MARKETING_VERSION = 1.2.10;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -860,7 +860,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "Save Button Extension (macOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0.2.9;
+				CURRENT_PROJECT_VERSION = 1.2.10;
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -875,7 +875,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 0.2.9;
+				MARKETING_VERSION = 1.2.10;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -900,7 +900,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Save Button (macOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0.2.9;
+				CURRENT_PROJECT_VERSION = 1.2.10;
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -917,7 +917,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 0.2.9;
+				MARKETING_VERSION = 1.2.10;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -944,7 +944,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Save Button (macOS).entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0.2.9;
+				CURRENT_PROJECT_VERSION = 1.2.10;
 				DEVELOPMENT_TEAM = FDPGS97G76;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -961,7 +961,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 0.2.9;
+				MARKETING_VERSION = 1.2.10;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
