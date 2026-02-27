@@ -2,7 +2,7 @@
   "name": "save-button",
   "description": "Save bookmarks, quotes, and images with Save Button",
   "private": true,
-  "version": "0.2.5",
+  "version": "0.2.6",
   "type": "module",
   "scripts": {
     "dev": "wxt",
