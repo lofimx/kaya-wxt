@@ -1,6 +1,6 @@
 # Releasing Extensions to Browser Stores
 
-Save Button is published to three browser extension stores. This document covers the full release process.
+Save Button is published to four browser stores. This document covers the full release process.
 
 ## Quick Reference
 
@@ -9,16 +9,17 @@ Save Button is published to three browser extension stores. This document covers
 | Chrome Web Store | [Developer Dashboard](https://chrome.google.com/webstore/devconsole) | [mnao305/chrome-extension-upload@v5](https://github.com/mnao305/chrome-extension-upload) |
 | Edge Add-ons | [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/) | [wdzeng/edge-addon@v2](https://github.com/wdzeng/edge-addon) |
 | Firefox AMO | [AMO Developer Hub](https://addons.mozilla.org/en-US/developers/) | `wxt submit` / `web-ext sign` |
-| Safari / App Store | [App Store Connect](https://appstoreconnect.apple.com/) | Xcode Archive (manual) |
+| Safari / App Store | [App Store Connect](https://appstoreconnect.apple.com/) | `build-safari` + `publish-safari` jobs in `release.yml` |
 
 ## How Releases Work
 
 1. Run `ruby bin/release.rb` -- this bumps the version in `extension/package.json`, commits, tags (e.g. `v0.1.1`), and pushes.
 2. The `v*.*.*` tag triggers the GitHub Actions workflow (`.github/workflows/release.yml`).
-3. The workflow builds the extension for all three browsers, runs tests, and then:
+3. The workflow builds the extension for all four browsers, runs tests, and then:
    - Uploads the Chrome zip to the Chrome Web Store
    - Uploads the Edge zip to Edge Add-ons
    - Uploads the Firefox zip to AMO
+   - Builds, archives, and uploads the Safari extension to App Store Connect
    - Creates a GitHub Release with all artifacts (extension zips, daemon binaries, Linux packages)
 4. Each store performs its own review before publishing the update.
 
@@ -115,6 +116,45 @@ The automated publish jobs require these repository secrets (Settings > Secrets 
 |---|---|---|
 | `AMO_JWT_ISSUER` | JWT issuer key (e.g. `user:12345:67`) | [AMO API keys page](https://addons.mozilla.org/en-US/developers/addon/api/key/) |
 | `AMO_JWT_SECRET` | JWT secret (64-char hex) | Same as above |
+
+### Safari / App Store
+
+All base64 values should be encoded without line breaks (`base64 -w 0` on Linux, `base64` on macOS).
+
+| Secret | Description |
+|---|---|
+| `APPLE_TEAM_ID` | Apple Developer Team ID (e.g. `FDPGS97G76`) |
+| `APPLE_CODE_SIGN_IDENTITY` | Signing identity, e.g. `Apple Distribution: Your Name (FDPGS97G76)` |
+| `APPLE_CERTIFICATE_BASE64` | Distribution certificate exported as `.p12`, then base64-encoded |
+| `APPLE_CERTIFICATE_PASSWORD` | Password set when exporting the `.p12` file |
+| `APPLE_PROVISION_PROFILE_APP_BASE64` | Provisioning profile for `org.savebutton.safari` (the container app), base64-encoded |
+| `APPLE_PROVISION_PROFILE_EXT_BASE64` | Provisioning profile for `org.savebutton.safari.Extension` (the extension), base64-encoded |
+| `APP_STORE_API_KEY` | App Store Connect API Key ID |
+| `APP_STORE_API_ISSUER` | App Store Connect API Issuer ID |
+| `APP_STORE_API_KEY_BASE64` | The `.p8` private key file from App Store Connect, base64-encoded |
+
+**How to get the certificate and profiles:**
+
+All of these steps must be done on a Mac.
+
+1. **Distribution certificate** (`APPLE_CERTIFICATE_BASE64`, `APPLE_CERTIFICATE_PASSWORD`):
+   - Open **Keychain Access**, find your "Apple Distribution" certificate
+   - Right-click > **Export Items...** > save as `.p12` (you'll set a password)
+   - Encode: `base64 < Certificates.p12 | pbcopy`
+
+2. **Provisioning profiles** (`APPLE_PROVISION_PROFILE_APP_BASE64`, `APPLE_PROVISION_PROFILE_EXT_BASE64`):
+   - Go to the [Apple Developer portal](https://developer.apple.com/account/resources/profiles/list) > Certificates, Identifiers & Profiles > Profiles
+   - Download (or create) two **Mac App Store** distribution profiles:
+     - One for App ID `org.savebutton.safari` (the container app)
+     - One for App ID `org.savebutton.safari.Extension` (the extension)
+   - Encode each: `base64 < SaveButton_App.provisionprofile | pbcopy`
+
+3. **App Store Connect API key** (`APP_STORE_API_KEY`, `APP_STORE_API_ISSUER`, `APP_STORE_API_KEY_BASE64`):
+   - Go to [App Store Connect > Users and Access > Integrations > Keys](https://appstoreconnect.apple.com/access/integrations/api)
+   - Create a new key with **App Manager** or **Admin** role
+   - Note the **Key ID** (`APP_STORE_API_KEY`) and **Issuer ID** (`APP_STORE_API_ISSUER`) shown on the page
+   - Download the `.p8` file (only available once!)
+   - Encode: `base64 < AuthKey_XXXXXX.p8 | pbcopy`
 
 ---
 
