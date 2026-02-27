@@ -212,6 +212,7 @@ jobs:
         publish-chrome,
         publish-edge,
         publish-firefox,
+        publish-safari,
       ]
     runs-on: ubuntu-latest
     steps:
@@ -232,13 +233,9 @@ jobs:
             artifacts/**/*.rpm
             artifacts/daemon-*/*
 
-  # TODO: Automate Safari App Store submission. Requires:
-  #   - APPLE_TEAM_ID secret (Apple Developer Team ID)
-  #   - APPLE_CODE_SIGN_IDENTITY secret (e.g. "Apple Distribution: ...")
-  #   - App Store Connect API key for upload via xcrun altool or notarytool
-  #   - Uncomment and complete the xcodebuild archive and upload steps below
   build-safari:
     name: Build Safari Extension
+    needs: [test-rust, test-extension]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -261,21 +258,120 @@ jobs:
         working-directory: extension
         run: pnpm wxt build -b safari
 
-      # - name: Archive for macOS
-      #   run: |
-      #     cd "safari/Save Button"
-      #     xcodebuild archive \
-      #       -scheme "Save Button (macOS)" \
-      #       -archivePath build/SaveButton-macOS.xcarchive \
-      #       CODE_SIGN_IDENTITY="${{ secrets.APPLE_CODE_SIGN_IDENTITY }}" \
-      #       DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}"
+      - name: Install Apple certificate and provisioning profile
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_PROVISION_PROFILE_APP_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_APP_BASE64 }}
+          APPLE_PROVISION_PROFILE_EXT_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_EXT_BASE64 }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
 
-      # - name: Upload to App Store Connect
-      #   run: |
-      #     xcrun altool --upload-app \
-      #       -f "safari/Save Button/build/SaveButton-macOS.xcarchive" \
-      #       --apiKey "${{ secrets.APP_STORE_API_KEY }}" \
-      #       --apiIssuer "${{ secrets.APP_STORE_API_ISSUER }}"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          echo -n "$APPLE_CERTIFICATE_BASE64" | base64 --decode -o "$CERTIFICATE_PATH"
+          security import "$CERTIFICATE_PATH" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          # Install provisioning profiles
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+
+          echo -n "$APPLE_PROVISION_PROFILE_APP_BASE64" | base64 --decode \
+            -o ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_App.provisionprofile
+          echo -n "$APPLE_PROVISION_PROFILE_EXT_BASE64" | base64 --decode \
+            -o ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_Ext.provisionprofile
+
+      - name: Archive universal binary (arm64 + x86_64)
+        run: |
+          cd "safari/Save Button"
+          xcodebuild archive \
+            -scheme "Save Button (macOS)" \
+            -configuration Release \
+            -archivePath build/SaveButton-macOS.xcarchive \
+            -destination "generic/platform=macOS" \
+            ARCHS="arm64 x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY="${{ secrets.APPLE_CODE_SIGN_IDENTITY }}" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}"
+
+      - name: Export archive for App Store
+        run: |
+          cd "safari/Save Button"
+          cat > ExportOptions.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>destination</key>
+            <string>upload</string>
+          </dict>
+          </plist>
+          PLIST
+
+          xcodebuild -exportArchive \
+            -archivePath build/SaveButton-macOS.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath build/export
+
+      - name: Upload archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: safari-macOS-archive
+          path: safari/Save Button/build/export/*.pkg
+
+      - name: Clean up keychain
+        if: always()
+        run: security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
+
+  publish-safari:
+    name: Publish to App Store Connect
+    needs: build-safari
+    runs-on: macos-latest
+    steps:
+      - name: Download Safari archive
+        uses: actions/download-artifact@v4
+        with:
+          name: safari-macOS-archive
+          path: artifacts
+
+      - name: Upload to App Store Connect
+        env:
+          APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
+          APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
+          APP_STORE_API_KEY_BASE64: ${{ secrets.APP_STORE_API_KEY_BASE64 }}
+        run: |
+          # Write the API key to a file
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo -n "$APP_STORE_API_KEY_BASE64" | base64 --decode \
+            -o ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8
+
+          PKG_PATH=$(ls artifacts/*.pkg)
+
+          xcrun notarytool submit "$PKG_PATH" \
+            --key ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8 \
+            --key-id "$APP_STORE_API_KEY" \
+            --issuer "$APP_STORE_API_ISSUER" \
+            --wait
+
+          xcrun altool --upload-app \
+            -f "$PKG_PATH" \
+            -t macos \
+            --apiKey "$APP_STORE_API_KEY" \
+            --apiIssuer "$APP_STORE_API_ISSUER"
 
   test-rust:
     name: Test Rust
