@@ -293,6 +293,16 @@ jobs:
           echo -n "$APPLE_PROVISION_PROFILE_EXT_BASE64" | base64 --decode \
             -o ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_Ext.provisionprofile
 
+          # Extract profile UUIDs for manual signing
+          APP_PROFILE_UUID=$(security cms -D -i \
+            ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_App.provisionprofile \
+            2>/dev/null | plutil -extract UUID raw -)
+          EXT_PROFILE_UUID=$(security cms -D -i \
+            ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_Ext.provisionprofile \
+            2>/dev/null | plutil -extract UUID raw -)
+          echo "APP_PROFILE_UUID=$APP_PROFILE_UUID" >> "$GITHUB_ENV"
+          echo "EXT_PROFILE_UUID=$EXT_PROFILE_UUID" >> "$GITHUB_ENV"
+
       - name: Archive universal binary (arm64 + x86_64)
         run: |
           cd "safari/Save Button"
@@ -303,13 +313,16 @@ jobs:
             -destination "generic/platform=macOS" \
             ARCHS="arm64 x86_64" \
             ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="${{ secrets.APPLE_CODE_SIGN_IDENTITY }}" \
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}"
 
       - name: Export archive for App Store
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd "safari/Save Button"
-          cat > ExportOptions.plist << 'PLIST'
+          cat > ExportOptions.plist << PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -318,6 +331,17 @@ jobs:
             <string>app-store-connect</string>
             <key>destination</key>
             <string>upload</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>teamID</key>
+            <string>${APPLE_TEAM_ID}</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>org.savebutton.safari</key>
+              <string>${APP_PROFILE_UUID}</string>
+              <key>org.savebutton.safari.Extension</key>
+              <string>${EXT_PROFILE_UUID}</string>
+            </dict>
           </dict>
           </plist>
           PLIST
