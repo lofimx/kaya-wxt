@@ -12,7 +12,7 @@
 #   2. Bumps the patch number (e.g. 0.2.14)
 #   3. Updates version in:
 #      - extension/package.json
-#      - safari/Save Button/Save Button.xcodeproj/project.pbxproj (MARKETING_VERSION)
+#      - safari/Save Button/Save Button.xcodeproj/project.pbxproj (MARKETING_VERSION, CURRENT_PROJECT_VERSION)
 #   4. Commits the changes
 #   5. Tags it (e.g. v0.2.14)
 #   6. Pushes the tag to origin
@@ -74,6 +74,10 @@ def update_pbxproj(old_version, new_version)
     puts "  Warning: project.pbxproj unchanged (no MARKETING_VERSION = #{old_version} found)"
     return
   end
+
+  # Also set CURRENT_PROJECT_VERSION (CFBundleVersion) to the same version string.
+  # App Store Connect requires this to increase with each upload.
+  updated = updated.gsub(/CURRENT_PROJECT_VERSION = [^;]+;/, "CURRENT_PROJECT_VERSION = #{new_version};")
 
   count = content.scan("MARKETING_VERSION = #{old_version};").length
   File.write(PBXPROJ_PATH, updated)
