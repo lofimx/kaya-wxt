@@ -225,6 +225,9 @@ jobs:
         with:
           path: artifacts
 
+      - name: Rename daemon binaries
+        run: .github/scripts/rename-daemon-binaries.sh artifacts
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -270,97 +273,20 @@ jobs:
           APPLE_PROVISION_PROFILE_EXT_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_EXT_BASE64 }}
           APP_STORE_API_KEY_BASE64: ${{ secrets.APP_STORE_API_KEY_BASE64 }}
           APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
-        run: |
-          # Create temporary keychain
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          # Import distribution certificate (for App Store export)
-          DIST_CERT_PATH=$RUNNER_TEMP/distribution.p12
-          echo -n "$APPLE_CERTIFICATE_BASE64" | base64 --decode -o "$DIST_CERT_PATH"
-          security import "$DIST_CERT_PATH" \
-            -P "$APPLE_CERTIFICATE_PASSWORD" \
-            -A \
-            -t cert \
-            -f pkcs12 \
-            -k "$KEYCHAIN_PATH"
-
-          # Import development certificate (for archive/build signing)
-          DEV_CERT_PATH=$RUNNER_TEMP/development.p12
-          echo -n "$APPLE_DEV_CERTIFICATE_BASE64" | base64 --decode -o "$DEV_CERT_PATH"
-          security import "$DEV_CERT_PATH" \
-            -P "$APPLE_DEV_CERTIFICATE_PASSWORD" \
-            -A \
-            -t cert \
-            -f pkcs12 \
-            -k "$KEYCHAIN_PATH"
-
-          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security list-keychain -d user -s "$KEYCHAIN_PATH"
-
-          # Install provisioning profiles
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-
-          echo -n "$APPLE_PROVISION_PROFILE_APP_BASE64" | base64 --decode \
-            -o ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_App.provisionprofile
-          echo -n "$APPLE_PROVISION_PROFILE_EXT_BASE64" | base64 --decode \
-            -o ~/Library/MobileDevice/Provisioning\ Profiles/SaveButton_Ext.provisionprofile
-
-          # Write App Store Connect API key for -allowProvisioningUpdates
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo -n "$APP_STORE_API_KEY_BASE64" | base64 --decode \
-            -o ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8
+        run: .github/scripts/install-apple-certs.sh
 
       - name: Archive universal binary (arm64 + x86_64)
         env:
           APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
           APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
-        run: |
-          cd "safari/Save Button"
-          xcodebuild archive \
-            -scheme "Save Button (macOS)" \
-            -configuration Release \
-            -archivePath build/SaveButton-macOS.xcarchive \
-            -destination "generic/platform=macOS" \
-            ARCHS="arm64 x86_64" \
-            ONLY_ACTIVE_ARCH=NO \
-            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8 \
-            -authenticationKeyID "$APP_STORE_API_KEY" \
-            -authenticationKeyIssuerID "$APP_STORE_API_ISSUER"
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: .github/scripts/archive-safari.sh
 
       - name: Export archive for App Store
         env:
           APP_STORE_API_KEY: ${{ secrets.APP_STORE_API_KEY }}
           APP_STORE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER }}
-        run: |
-          cd "safari/Save Button"
-          cat > ExportOptions.plist << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store-connect</string>
-            <key>destination</key>
-            <string>upload</string>
-          </dict>
-          </plist>
-          PLIST
-
-          xcodebuild -exportArchive \
-            -archivePath build/SaveButton-macOS.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath build/export \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_API_KEY}.p8 \
-            -authenticationKeyID "$APP_STORE_API_KEY" \
-            -authenticationKeyIssuerID "$APP_STORE_API_ISSUER"
+        run: .github/scripts/export-safari.sh
 
       - name: Clean up keychain
         if: always()
