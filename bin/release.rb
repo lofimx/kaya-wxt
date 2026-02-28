@@ -122,9 +122,9 @@ VERSION_FILES.each do |f|
 end
 puts
 
-print "Proceed? [y/N] "
+print "Proceed? [Y/n] "
 answer = $stdin.gets.chomp
-abort "Aborted." unless answer.downcase == "y"
+abort "Aborted." if answer.downcase == "n"
 puts
 
 # Check for uncommitted changes (besides the files we're about to modify)
