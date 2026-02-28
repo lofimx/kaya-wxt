@@ -227,7 +227,7 @@ Safari extensions are packaged as macOS/iOS apps via Xcode. The Xcode project li
 
 ## Updating Store Submissions
 
-After `release.yml` completes, Edge and Firefox submissions are fully automatic. Chrome and Safari each require a manual step.
+After `release.yml` completes, Firefox submissions are fully automatic. Chrome and Edge may each require a manual step. Safari always requires manual submission.
 
 ### Chrome Web Store
 
@@ -238,6 +238,14 @@ The CI workflow uploads the zip and auto-publishes (submits for review). This is
 3. If the latest draft hasn't been auto-submitted, click **Submit for review**
 
 If multiple releases land while a review is pending, only the latest draft needs to be submitted -- older drafts can be discarded.
+
+### Edge Add-ons
+
+The CI workflow uploads and submits automatically, but Edge also only allows **one version in review at a time**. If a previous version is still in review when a new version is uploaded, the new version will remain as a draft. When this happens, cancel the stale in-review submission and submit the latest draft instead -- there's no value in reviewing an old version that will be immediately superseded.
+
+1. Go to [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/) and open Save Button
+2. Cancel the submission for the older in-review version
+3. Click **Submit for review** on the latest draft
 
 ### Safari / App Store
 
