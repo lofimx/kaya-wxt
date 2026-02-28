@@ -158,6 +158,7 @@ jobs:
           zip-path: ${{ steps.find-zip.outputs.zip_path }}
           client-id: ${{ secrets.EDGE_CLIENT_ID }}
           api-key: ${{ secrets.EDGE_API_KEY }}
+          upload-only: true
 
   publish-firefox:
     name: Publish to Firefox AMO
