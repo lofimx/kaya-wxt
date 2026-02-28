@@ -128,6 +128,7 @@ jobs:
         run: echo "zip_path=$(ls artifacts/*-chrome.zip)" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Chrome Web Store
+        continue-on-error: true
         uses: mnao305/chrome-extension-upload@v5.0.0
         with:
           file-path: ${{ steps.find-zip.outputs.zip_path }}
