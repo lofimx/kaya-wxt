@@ -158,3 +158,7 @@ puts "Pushed #{new_tag} to origin."
 
 puts
 puts "Release #{new_tag} complete."
+puts
+puts "NOTE: Safari requires a manual App Store submission."
+puts "      Create a new App Store version on App Store Connect."
+puts "      See doc/stores/STORES.md (\"Updating Store Submissions\") for steps."

@@ -225,6 +225,19 @@ Safari extensions are packaged as macOS/iOS apps via Xcode. The Xcode project li
 
 ---
 
+## Updating Store Submissions
+
+After `release.yml` completes, Chrome, Edge, and Firefox submissions are automatic. Safari requires a manual step in App Store Connect:
+
+1. Go to [App Store Connect](https://appstoreconnect.apple.com/) > Apps > Save Button
+2. In the sidebar under "App Store", click `+` next to the platform and create a new version (e.g. `1.2.15`)
+3. Scroll to the **Build** section and click `+` to select the build uploaded by CI
+4. Fill in the **What's New** text and verify all required metadata is present
+5. Click **Add for Review** (top-right)
+6. Click **Submit for Review**
+
+The build will appear in TestFlight automatically after CI uploads it, but it will not be submitted for App Store review until you complete the steps above.
+
 ## Updating Store Listings
 
 To update descriptions, screenshots, or other listing metadata, do so directly in each store's dashboard. The automated workflow only uploads new extension zips -- it does not update listing text or images.
