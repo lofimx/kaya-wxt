@@ -227,16 +227,29 @@ Safari extensions are packaged as macOS/iOS apps via Xcode. The Xcode project li
 
 ## Updating Store Submissions
 
-After `release.yml` completes, Chrome, Edge, and Firefox submissions are automatic. Safari requires a manual step in App Store Connect:
+After `release.yml` completes, Edge and Firefox submissions are fully automatic. Chrome and Safari each require a manual step.
+
+### Chrome Web Store
+
+The CI workflow uploads the zip and auto-publishes (submits for review). This is usually automatic, but the Chrome Web Store only allows **one version in review at a time**. If a previous version is still being reviewed, CI will upload the new zip as a **draft** but the publish step will fail silently (`continue-on-error: true`). When this happens:
+
+1. Wait for the current review to complete (typically 1-3 days)
+2. Go to the [Chrome Developer Dashboard](https://chrome.google.com/webstore/devconsole) and open Save Button
+3. If the latest draft hasn't been auto-submitted, click **Submit for review**
+
+If multiple releases land while a review is pending, only the latest draft needs to be submitted -- older drafts can be discarded.
+
+### Safari / App Store
+
+The CI workflow uploads the build to App Store Connect, where it appears in TestFlight. It will not be submitted for App Store review automatically. To submit:
 
 1. Go to [App Store Connect](https://appstoreconnect.apple.com/) > Apps > Save Button
 2. In the sidebar under "App Store", click `+` next to the platform and create a new version (e.g. `1.2.15`)
 3. Scroll to the **Build** section and click `+` to select the build uploaded by CI
 4. Fill in the **What's New** text and verify all required metadata is present
-5. Click **Add for Review** (top-right)
-6. Click **Submit for Review**
-
-The build will appear in TestFlight automatically after CI uploads it, but it will not be submitted for App Store review until you complete the steps above.
+5. Save the page (required before uploading screenshots for a new locale)
+6. Click **Add for Review** (top-right)
+7. Click **Submit for Review**
 
 ## Updating Store Listings
 
